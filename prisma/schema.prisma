@@ -1,0 +1,88 @@
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Partida {
+  id               String      @id @default(auto()) @map("_id") @db.ObjectId
+  codigo           String      @unique // Código único de la partida
+  jugadores        Jugador[] // Lista de jugadores en la partida
+  fondoApuestaFijo Float // Fondo de apuesta
+  tablerosize      Int
+  creadorNombre    String
+  fichasTotales    Int
+  colores          String[]
+  montoApuesta     Float // Apuesta actual
+  turnoActual      Int?        @default(0) // Turno actual
+  estado           estadoEnum? @default(EN_ESPERA) // Estado de la partida
+  tablero          Tablero? // Tablero de la partida
+}
+
+// Cambiar los IDs de los subdocumentos a Int
+type Jugador {
+  id           Int // Cambiado a auto-incremental
+  nombre       String // Nombre del jugador
+  fondoApuesta Float? // Fondo de apuesta del jugador
+  haPerdido    Boolean @default(false) // Si el jugador ha perdido
+  color        String? // Color del jugador
+  turnoFicha   Int
+  fichas       Ficha[] // Fichas del jugador
+}
+
+type Ficha {
+  id        Int // Cambiado a auto-incremental
+  color     String? // Color de la ficha
+  posicion  Coordenadas? // Coordenadas en el tablero
+  eliminada Boolean?     @default(false) // Si la ficha está eliminada
+}
+
+type Tablero {
+  numeroCasillasPorAspa Int // Número de casillas por aspa
+  casillas              Casilla[] // Lista de casillas en el tablero
+}
+
+type Casilla {
+  id          Int? // Cambiado a auto-incremental
+  tipo        CasillaTypeEnum // Tipo de la casilla
+  orientacion OrientacionCasilla // Orientación de la casilla
+  posicion    Coordenadas // Coordenadas en el tablero
+  ocupanteId  Int? // ID de la ficha ocupante
+}
+
+// Tipos embebidos
+type Coordenadas {
+  X Float
+  Y Float
+}
+
+enum CasillaTypeEnum {
+  OCULTA
+  NORMAL
+  CENTRAL
+  TRIANGULO
+  SEMICIRCULAR
+  INICIO
+  FINAL
+  SALIDA
+}
+
+enum OrientacionCasilla {
+  SuperiorIzquierda
+  SuperiorDerecha
+  InferiorIzquierda
+  InferiorDerecha
+  IzquierdaSuperior
+  IzquierdaInferior
+  DerechaSuperior
+  DerechaInferior
+}
+
+enum estadoEnum {
+  EN_ESPERA
+  EN_CURSO
+  FINALIZADA
+}
