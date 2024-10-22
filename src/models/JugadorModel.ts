@@ -9,6 +9,7 @@ export class JugadorModel {
   public color: string;
   public fondoApuesta: number;
   public haPerdido: boolean = false;
+  public isDisconnect: boolean = false;
   // constructor para crear envace a parametros
 
   constructor(data: Jugador) {
@@ -19,6 +20,7 @@ export class JugadorModel {
     this.fichas = data.fichas?.map((ficha) => new FichaModel(ficha));
     this.haPerdido = data.haPerdido;
     this.turnoFicha = data.turnoFicha;
+    this.isDisconnect = data.isDisconnect;
   }
 
   public crearFichas(fichasTotales: number) {
@@ -42,6 +44,7 @@ export class JugadorModel {
       haPerdido: this.haPerdido,
       turnoFicha: this.turnoFicha,
       fichas: this.fichas.map((ficha) => ficha.getData()), // Mapeamos los datos de las fichas también
+      isDisconnect: this.isDisconnect,
     };
   }
 }

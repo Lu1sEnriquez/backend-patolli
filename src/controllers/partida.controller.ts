@@ -3,9 +3,11 @@ import {
   SubscribeMessage,
   MessageBody,
   WebSocketServer,
+  ConnectedSocket,
+  OnGatewayDisconnect,
 } from '@nestjs/websockets';
 import { PartidaService } from './partida.service';
-import { Server } from 'socket.io';
+import { Server, Socket } from 'socket.io';
 import { Partida } from '@prisma/client';
 import {
   badRequest,
@@ -24,9 +26,12 @@ import { CreatePartidaDto } from '../dto/partida.dto';
 
 // partida controller se encarga de utilizar
 //  el service y guardar la informacion
-export class PartidaController {
+export class PartidaController implements OnGatewayDisconnect {
   @WebSocketServer()
   server: Server; // Servidor WebSocket
+
+  // Almacenar la relación entre el socket y el jugador.
+  private jugadoresConectados: Map<string, string> = new Map(); // socket.id -> jugador.id
 
   constructor(private readonly partidaService: PartidaService) {}
 
@@ -54,7 +59,10 @@ export class PartidaController {
   }
 
   @SubscribeMessage(SocketEvents.UNIRSE_PARTIDA)
-  async unirJugador(@MessageBody() data: string) {
+  async unirJugador(
+    @MessageBody() data: string,
+    @ConnectedSocket() client: Socket,
+  ) {
     console.log(data);
     let parsedDto: { codigo: string; nombre: string };
 
@@ -65,6 +73,10 @@ export class PartidaController {
 
       return badRequest('Invalid JSON format');
     }
+    // Almacenar el nombre del jugador y el código de la partida en el socket
+    client.data.jugadorNombre = parsedDto.nombre;
+    client.data.codigoPartida = parsedDto.codigo;
+
     const response: SocketResponse<Partida | null> =
       await this.partidaService.unirJugador(parsedDto.codigo, {
         nombre: parsedDto.nombre,
@@ -87,9 +99,31 @@ export class PartidaController {
       return badRequest('Invalid JSON format');
     }
     const response: SocketResponse<Partida | null> =
-      await this.partidaService.salirJugador(parsedDto.codigo, {id:parsedDto.id});
+      await this.partidaService.salirJugador(parsedDto.codigo, {
+        id: parsedDto.id,
+      });
 
     this.server.emit(SocketEvents.ELIMINAR_JUGADOR, response);
     return response;
+  }
+  
+  async handleDisconnect(client: Socket) {
+    const jugadorNombre = client.data.jugadorNombre;
+    const codigoPartida = client.data.codigoPartida;
+
+    console.log(
+      `Client disconnected: ${client.id}, Jugador: ${jugadorNombre}, Partida: ${codigoPartida}`,
+    );
+
+    // Lógica para sacar al jugador de la partida
+    if (jugadorNombre && codigoPartida) {
+      const response: SocketResponse<Partida | null> =
+        await this.partidaService.suspenderJugador(
+          codigoPartida,
+          jugadorNombre,
+        );
+
+      this.server.emit(SocketEvents.JUGADOR_DESCONECTADO, response);
+    }
   }
 }

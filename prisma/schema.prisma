@@ -31,6 +31,7 @@ type Jugador {
   color        String? // Color del jugador
   turnoFicha   Int
   fichas       Ficha[] // Fichas del jugador
+  isDisconnect Boolean @default(false) // Si el jugador se ha desconectado
 }
 
 type Ficha {

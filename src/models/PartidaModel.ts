@@ -44,6 +44,24 @@ export class PartidaModel {
   ): SocketResponse<Partida | null> {
     try {
       // Verificar si el número de jugadores ya ha alcanzado el límite
+      if (
+        this?.jugadores?.some(
+          (j) => j.nombre === jugadorData.nombre && !j.isDisconnect,
+        )
+      ) {
+        return badRequest('El nombre de este usuario ya existe en la partida');
+      }
+      if (
+        this?.jugadores?.some(
+          (j) => j.nombre === jugadorData.nombre && j.isDisconnect,
+        )
+      ) {
+        //actualizar el estado del usuario
+        const usuarioToReconect = this?.jugadores?.find(
+          (j) => j.nombre === jugadorData.nombre && j.isDisconnect,
+        );
+        return this.reintegrarJugador(usuarioToReconect);
+      }
       if (this?.jugadores?.length >= 4) {
         return badRequest('Se alcanzó el límite de jugadores');
       }
@@ -58,8 +76,8 @@ export class PartidaModel {
         nombre: jugadorData.nombre,
         fondoApuesta: jugadorData.fondoApuesta | this.fondoApuestaFijo,
         color: colorJugador,
-
         fichas: [],
+        isDisconnect: jugadorData.isDisconnect,
       };
       // Crear un nuevo jugador
       const jugador = new JugadorModel(data);
@@ -99,6 +117,68 @@ export class PartidaModel {
       console.error('Error al sacar jugador:', error);
       return internalServerError('Error interno al sacar al jugador');
     }
+  }
+
+  suspenderJugador(
+    jugadorData: Partial<JugadorCreateDto>,
+  ): SocketResponse<Partida | null> {
+    try {
+      const result = this.jugadores?.find(
+        (jugador) => jugador.nombre === jugadorData.nombre,
+      );
+
+      if (result === null) {
+        return badRequest(
+          `Nombre de Usuario ${jugadorData.nombre} no encontrado`,
+        );
+      }
+
+      //actualizar el estado del usuario
+      this.jugadores = this.jugadores.map((jugador) => {
+        if (jugador.nombre === jugadorData.nombre) {
+          jugador.isDisconnect = true;
+          return jugador;
+        }
+        return jugador;
+      });
+
+      return created(
+        this.getData(),
+        `El Jugador con nombre ${jugadorData.nombre} se ha desconectado`,
+      ); // Retornar la partida actualizada
+    } catch (error) {
+      console.error('Error al desconectar jugador:', error);
+      return internalServerError('Error interno al desconectar al jugador');
+    }
+  }
+
+  reintegrarJugador(
+    jugadorData: Partial<JugadorCreateDto>,
+  ): SocketResponse<Partida | null> {
+    // const idJugador = this.jugadores?.length; // Asignar ID basado en el tamaño actual de jugadores
+    // const colorJugador = this.colores[idJugador] || null; // Asignar color al jugador
+
+    // const data: Jugador = {
+    //   id: jugadorData.id,
+    //   haPerdido: jugadorData.haPerdido,
+    //   turnoFicha: jugadorData.turnoFicha,
+    //   nombre: jugadorData.nombre,
+    //   fondoApuesta: jugadorData.fondoApuesta,
+    //   color: jugadorData.color,
+    //   fichas: jugadorData.fichas,
+    //   isDisconnect: false,
+    // };
+
+    //actualizar el estado del usuario de la partida
+    this.jugadores = this.jugadores.map((jugador) => {
+      if (jugador.nombre === jugadorData.nombre) {
+        jugador.isDisconnect = false;
+        return jugador;
+      }
+      return jugador;
+    });
+
+    return created(this.getData(), 'Jugador reconectado correctamente'); // Retornar la partida actualizada
   }
 
   // generarTablero() {

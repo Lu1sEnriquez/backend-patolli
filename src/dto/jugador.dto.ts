@@ -34,4 +34,7 @@ export class JugadorCreateDto implements Jugador {
   @ValidateNested({ each: true })
   @Type(() => FichaCreateDto)
   fichas: FichaCreateDto[];
+
+  @IsBoolean()
+  isDisconnect: boolean;
 }

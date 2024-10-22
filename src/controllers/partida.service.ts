@@ -32,6 +32,7 @@ export class PartidaService {
         fichas: [],
         haPerdido: false,
         turnoFicha: 0,
+        isDisconnect: false,
       });
       jugadorUno.crearFichas(data.fichasTotales);
 
@@ -157,6 +158,47 @@ export class PartidaService {
     } catch (error) {
       console.error('Error al sacar al jugador:', error);
       return internalServerError('Error interno del servidor al sacar jugador');
+    }
+  }
+
+  async suspenderJugador(
+    codigoPartida: string,
+    jugadorNombre: string,
+  ): Promise<SocketResponse<Partida | null>> {
+    try {
+      // Buscar la partida en la que está el jugador por su nombre
+      const partida = await this.prisma.partida.findUnique({
+        where: { codigo: codigoPartida },
+      });
+
+      if (!partida) {
+        return badRequest('Partida no encontrada');
+      }
+
+      const partidaActualizada = new PartidaModel(partida);
+
+      const result = partidaActualizada.suspenderJugador({
+        nombre: jugadorNombre,
+      });
+
+      const { id, ...data } = partidaActualizada.getData();
+
+      const partidaGuardada = await this.prisma.partida.update({
+        where: { codigo: partida.codigo },
+        data: data,
+      });
+
+      // si todo a salido bien regresamos la partida actualizada
+      if (result.success) {
+        return created(partidaGuardada, 'Jugador desconectado exitosamente');
+      }
+
+      return result;
+    } catch (error) {
+      console.error('Error al desconectar al jugador:', error);
+      return internalServerError(
+        'Error interno del servidor al desconectar jugador',
+      );
     }
   }
 }
