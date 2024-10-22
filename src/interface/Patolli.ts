@@ -23,13 +23,6 @@ export interface Jugador {
   fichas: Ficha[]; // Lista de fichas del jugador
 }
 
-export interface Ficha {
-  id: number; // ID incremental
-  color?: string; // Color de la ficha, opcional
-  posicion?: Coordenadas; // Coordenadas en el tablero, opcional
-  eliminada?: boolean; // Si la ficha está eliminada, opcional con valor por defecto 'false'
-}
-
 export interface Tablero {
   numeroCasillasPorAspa: number; // Número de casillas por aspa
   casillas: Casilla[]; // Lista de casillas en el tablero
@@ -41,6 +34,12 @@ export interface Casilla {
   orientacion: OrientacionCasilla; // Orientación de la casilla
   posicion: Coordenadas; // Coordenadas de la casilla en el tablero
   ocupante?: Ficha | null; // ficha ocupante, opcional
+}
+export interface Ficha {
+  id: number; // ID incremental
+  color?: string; // Color de la ficha, opcional
+  posicion?: Coordenadas; // Coordenadas en el tablero, opcional
+  eliminada?: boolean; // Si la ficha está eliminada, opcional con valor por defecto 'false'
 }
 
 export interface Coordenadas {

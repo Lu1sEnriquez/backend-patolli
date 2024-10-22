@@ -7,7 +7,7 @@ import {
   SocketResponse,
 } from 'src/interface/socket-response';
 import { JugadorCreateDto } from '../dto/jugador.dto';
-import { estadoEnum, Ficha, Jugador, Partida } from '@prisma/client';
+import { estadoEnum, Jugador, Partida } from '@prisma/client';
 
 export class PartidaModel {
   public jugadores: JugadorModel[] = [];
@@ -51,25 +51,20 @@ export class PartidaModel {
       const idJugador = this.jugadores?.length; // Asignar ID basado en el tamaño actual de jugadores
       const colorJugador = this.colores[idJugador] || null; // Asignar color al jugador
 
-      // Crear fichas para el jugador
-      const fichas: Ficha[] = [
-        { id: 1, color: colorJugador, eliminada: false, posicion: null },
-        { id: 2, color: colorJugador, eliminada: false, posicion: null },
-        { id: 3, color: colorJugador, eliminada: false, posicion: null },
-        { id: 4, color: colorJugador, eliminada: false, posicion: null },
-      ];
-
       const data: Jugador = {
         id: idJugador,
         haPerdido: jugadorData.haPerdido,
-        turnoFicha: jugadorData.turnoFicha,
+        turnoFicha: jugadorData.turnoFicha | 0,
         nombre: jugadorData.nombre,
         fondoApuesta: jugadorData.fondoApuesta | this.fondoApuestaFijo,
         color: colorJugador,
-        fichas: fichas,
+
+        fichas: [],
       };
       // Crear un nuevo jugador
       const jugador = new JugadorModel(data);
+
+      jugador.crearFichas(this.fichasTotales);
       // Agregar el jugador a la partida
       this.jugadores?.push(jugador);
 
