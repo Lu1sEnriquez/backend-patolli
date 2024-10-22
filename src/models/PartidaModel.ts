@@ -44,6 +44,10 @@ export class PartidaModel {
   ): SocketResponse<Partida | null> {
     try {
       // Verificar si el número de jugadores ya ha alcanzado el límite
+      if (this?.jugadores?.length >= 4) {
+        return badRequest('Se alcanzó el límite de jugadores');
+      }
+      // Verificar si el nombre del jugador ya existe en la partida
       if (
         this?.jugadores?.some(
           (j) => j.nombre === jugadorData.nombre && !j.isDisconnect,
@@ -51,6 +55,7 @@ export class PartidaModel {
       ) {
         return badRequest('El nombre de este usuario ya existe en la partida');
       }
+      // Verificar si el jugador que se esta intentando unir ya pertencia a la partida
       if (
         this?.jugadores?.some(
           (j) => j.nombre === jugadorData.nombre && j.isDisconnect,
@@ -61,9 +66,6 @@ export class PartidaModel {
           (j) => j.nombre === jugadorData.nombre && j.isDisconnect,
         );
         return this.reintegrarJugador(usuarioToReconect);
-      }
-      if (this?.jugadores?.length >= 4) {
-        return badRequest('Se alcanzó el límite de jugadores');
       }
 
       const idJugador = this.jugadores?.length; // Asignar ID basado en el tamaño actual de jugadores
