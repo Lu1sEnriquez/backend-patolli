@@ -127,7 +127,7 @@ export const generarTablero = (size: number = 8) => {
 
         const Casilla: Casilla = {
           id: id++,
-          ocupanteId: null,
+          ocupante: null,
           orientacion: orientacion,
           posicion: { X: columna, Y: fila },
           tipo: tipo,
@@ -137,7 +137,7 @@ export const generarTablero = (size: number = 8) => {
         // Aquí puedes crear una casilla "vacía" en lugar de `null`
         const casillaVacia: Casilla = {
           id: null, // O algún valor por defecto
-          ocupanteId: null,
+          ocupante: null,
           orientacion: OrientacionCasilla.InferiorDerecha, // O algún valor por defecto
           posicion: { X: columna, Y: fila }, // O algún valor por defecto
           tipo: CasillaTypeEnum.OCULTA, // O algún valor por defecto

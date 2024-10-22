@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { PartidaModule } from './partida/partida.module';
+import { PartidaModule } from './controllers/partida.module';
 import { PrismaModule } from './prisma/prisma.module';
 
 @Module({

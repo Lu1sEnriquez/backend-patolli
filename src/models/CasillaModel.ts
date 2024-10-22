@@ -2,19 +2,20 @@ import {
   Casilla,
   CasillaTypeEnum,
   Coordenadas,
+  Ficha,
   OrientacionCasilla,
 } from '@prisma/client';
 
-export class CasillaClass {
+export class CasillaModel {
   public id: number;
-  public ocupanteId: number | null;
+  public ocupante: Ficha | null;
   public orientacion: OrientacionCasilla;
   public posicion: Coordenadas;
   public tipo: CasillaTypeEnum;
 
   constructor(casillaData: Casilla) {
     this.id = casillaData.id;
-    this.ocupanteId = casillaData.ocupanteId;
+    this.ocupante = casillaData.ocupante;
     this.orientacion = casillaData.orientacion;
     this.posicion = casillaData.posicion;
     this.tipo = casillaData.tipo;
@@ -23,7 +24,7 @@ export class CasillaClass {
   getData(): Casilla {
     return {
       id: this.id,
-      ocupanteId: this.ocupanteId,
+      ocupante: this.ocupante,
       orientacion: this.orientacion,
       posicion: {
         X: this.posicion.X,

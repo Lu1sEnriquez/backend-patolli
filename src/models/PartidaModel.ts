@@ -1,5 +1,5 @@
-import { JugadorClass } from './Jugador';
-import { TableroClass } from './Tablero';
+import { JugadorModel } from './JugadorModel';
+import { TableroModel } from './TableroModel';
 import {
   badRequest,
   created,
@@ -7,10 +7,10 @@ import {
   SocketResponse,
 } from 'src/interface/socket-response';
 import { JugadorCreateDto } from '../dto/jugador.dto';
-import { estadoEnum, Ficha, Jugador, Partida } from '@prisma/client';
+import { estadoEnum, Jugador, Partida } from '@prisma/client';
 
-export class PartidaClass {
-  public jugadores: JugadorClass[] = [];
+export class PartidaModel {
+  public jugadores: JugadorModel[] = [];
   public estado: estadoEnum = estadoEnum.EN_CURSO;
   public id: string;
   public codigo: string;
@@ -20,12 +20,12 @@ export class PartidaClass {
   public montoApuesta: number;
   public tableroSize: number;
   public fichasTotales: number;
-  public tablero: TableroClass;
+  public tablero: TableroModel;
   public turnoActual: number;
   constructor(data: Partial<Partida>) {
     this.id = data.id;
     this.jugadores = data.jugadores?.map(
-      (jugador) => new JugadorClass(jugador),
+      (jugador) => new JugadorModel(jugador),
     );
     this.estado = data.estado;
     this.codigo = data.codigo;
@@ -36,7 +36,7 @@ export class PartidaClass {
     this.tableroSize = data.tablerosize;
     this.fichasTotales = data.fichasTotales;
     this.turnoActual = data.turnoActual;
-    this.tablero = new TableroClass(data.tablero);
+    this.tablero = new TableroModel(data.tablero);
   }
 
   agregarJugador(
@@ -51,25 +51,20 @@ export class PartidaClass {
       const idJugador = this.jugadores?.length; // Asignar ID basado en el tamaño actual de jugadores
       const colorJugador = this.colores[idJugador] || null; // Asignar color al jugador
 
-      // Crear fichas para el jugador
-      const fichas: Ficha[] = [
-        { id: 1, color: colorJugador, eliminada: false, posicion: null },
-        { id: 2, color: colorJugador, eliminada: false, posicion: null },
-        { id: 3, color: colorJugador, eliminada: false, posicion: null },
-        { id: 4, color: colorJugador, eliminada: false, posicion: null },
-      ];
-
       const data: Jugador = {
         id: idJugador,
         haPerdido: jugadorData.haPerdido,
-        turnoFicha: jugadorData.turnoFicha,
+        turnoFicha: jugadorData.turnoFicha | 0,
         nombre: jugadorData.nombre,
         fondoApuesta: jugadorData.fondoApuesta | this.fondoApuestaFijo,
         color: colorJugador,
-        fichas: fichas,
+
+        fichas: [],
       };
       // Crear un nuevo jugador
-      const jugador = new JugadorClass(data);
+      const jugador = new JugadorModel(data);
+
+      jugador.crearFichas(this.fichasTotales);
       // Agregar el jugador a la partida
       this.jugadores?.push(jugador);
 
@@ -80,6 +75,29 @@ export class PartidaClass {
     } catch (error) {
       console.error('Error al agregar jugador:', error);
       return internalServerError('Error interno al agregar jugador');
+    }
+  }
+
+  sacarJugador(
+    jugadorData: Partial<JugadorCreateDto>,
+  ): SocketResponse<Partida | null> {
+    try {
+      const indice = this.jugadores?.findIndex(
+        (jugador) => jugador.id === jugadorData.id,
+      );
+
+      if (indice === -1) {
+        return badRequest(`Usuario con id ${jugadorData.id} no encontrado`);
+      }
+
+      this.jugadores.splice(indice, 1);
+      return created(
+        this.getData(),
+        `Jugador con id ${jugadorData.id} sacado correctamente`,
+      ); // Retornar la partida actualizada
+    } catch (error) {
+      console.error('Error al sacar jugador:', error);
+      return internalServerError('Error interno al sacar al jugador');
     }
   }
 

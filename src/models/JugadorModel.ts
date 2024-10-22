@@ -1,8 +1,8 @@
 import { Jugador } from '@prisma/client';
-import { FichaClass } from './Ficha';
+import { FichaModel } from './FichaModel';
 
-export class JugadorClass {
-  public fichas: FichaClass[] = [];
+export class JugadorModel {
+  public fichas: FichaModel[] = [];
   public turnoFicha: number = 0;
   public id: number;
   public nombre: string;
@@ -16,7 +16,7 @@ export class JugadorClass {
     this.nombre = data.nombre;
     this.color = data.color;
     this.fondoApuesta = data.fondoApuesta;
-    this.fichas = data.fichas?.map((ficha) => new FichaClass(ficha));
+    this.fichas = data.fichas?.map((ficha) => new FichaModel(ficha));
     this.haPerdido = data.haPerdido;
     this.turnoFicha = data.turnoFicha;
   }
@@ -29,7 +29,7 @@ export class JugadorClass {
         eliminada: false,
         posicion: null,
       };
-      return new FichaClass(ficha);
+      return new FichaModel(ficha);
     });
   }
 

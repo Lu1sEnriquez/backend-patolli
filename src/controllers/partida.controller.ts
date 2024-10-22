@@ -12,7 +12,7 @@ import {
   SocketEvents,
   SocketResponse,
 } from 'src/interface/socket-response';
-import { CreatePartidaDto } from './dto/partida.dto';
+import { CreatePartidaDto } from '../dto/partida.dto';
 
 @WebSocketGateway({
   cors: {
@@ -21,7 +21,10 @@ import { CreatePartidaDto } from './dto/partida.dto';
     credentials: true, // Permitir credenciales
   },
 })
-export class PartidaGateway {
+
+// partida controller se encarga de utilizar
+//  el service y guardar la informacion
+export class PartidaController {
   @WebSocketServer()
   server: Server; // Servidor WebSocket
 
@@ -68,6 +71,27 @@ export class PartidaGateway {
       });
 
     this.server.emit(SocketEvents.JUGADOR_UNIDO, response);
+    return response;
+  }
+
+  @SubscribeMessage(SocketEvents.ELIMINAR_JUGADOR)
+  async sacarJugador(@MessageBody() data: string) {
+    console.log(data);
+    let parsedDto: { codigo: string; nombre: string };
+
+    try {
+      parsedDto = JSON.parse(data);
+    } catch (error) {
+      console.log(error);
+
+      return badRequest('Invalid JSON format');
+    }
+    const response: SocketResponse<Partida | null> =
+      await this.partidaService.salirJugador(parsedDto.codigo, {
+        nombre: parsedDto.nombre,
+      });
+
+    this.server.emit(SocketEvents.ELIMINAR_JUGADOR, response);
     return response;
   }
 }
