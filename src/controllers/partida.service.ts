@@ -123,6 +123,42 @@ export class PartidaService {
       return internalServerError('Error interno del servidor al unir jugador');
     }
   }
+
+  async salirJugador(codigo: string, jugadorDto: Partial<JugadorCreateDto>) {
+    try {
+      // Buscar la partida en la base de datos
+      const partida = await this.prisma.partida.findUnique({
+        where: { codigo: codigo },
+      });
+
+      if (!partida) {
+        return badRequest('Partida no encontrada');
+      }
+
+      const partidaActualizada = new PartidaModel(partida);
+
+      const result = partidaActualizada.sacarJugador({
+        nombre: jugadorDto.nombre,
+      });
+
+      const { id, ...data } = partidaActualizada.getData();
+
+      const partidaGuardada = await this.prisma.partida.update({
+        where: { codigo: codigo },
+        data: data,
+      });
+
+      // si todo a salido bien regresamos la partida actualizada
+      if (result.success) {
+        return created(partidaGuardada, 'Jugador sacado exitosamente');
+      }
+      // si la clase devuelve un error al agregar un usuario lo retornamos al cliente
+      return result;
+    } catch (error) {
+      console.error('Error al sacar al jugador:', error);
+      return internalServerError('Error interno del servidor al sacar jugador');
+    }
+  }
 }
 
 export const partidaExample = {

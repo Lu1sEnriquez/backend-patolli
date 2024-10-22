@@ -83,6 +83,29 @@ export class PartidaModel {
     }
   }
 
+  sacarJugador(
+    jugadorData: Partial<JugadorCreateDto>,
+  ): SocketResponse<Partida | null> {
+    try {
+      const indice = this.jugadores?.findIndex(
+        (jugador) => jugador.id === jugadorData.id,
+      );
+
+      if (indice === -1) {
+        return badRequest(`Usuario con id ${jugadorData.id} no encontrado`);
+      }
+
+      this.jugadores.splice(indice, 1);
+      return created(
+        this.getData(),
+        `Jugador con id ${jugadorData.id} sacado correctamente`,
+      ); // Retornar la partida actualizada
+    } catch (error) {
+      console.error('Error al sacar jugador:', error);
+      return internalServerError('Error interno al sacar al jugador');
+    }
+  }
+
   // generarTablero() {
   //   this.tablero = new TableroClass({
   //     numeroCasillasPorAspa: this.tableroSize,

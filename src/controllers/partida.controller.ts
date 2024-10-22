@@ -73,4 +73,25 @@ export class PartidaController {
     this.server.emit(SocketEvents.JUGADOR_UNIDO, response);
     return response;
   }
+
+  @SubscribeMessage(SocketEvents.ELIMINAR_JUGADOR)
+  async sacarJugador(@MessageBody() data: string) {
+    console.log(data);
+    let parsedDto: { codigo: string; nombre: string };
+
+    try {
+      parsedDto = JSON.parse(data);
+    } catch (error) {
+      console.log(error);
+
+      return badRequest('Invalid JSON format');
+    }
+    const response: SocketResponse<Partida | null> =
+      await this.partidaService.salirJugador(parsedDto.codigo, {
+        nombre: parsedDto.nombre,
+      });
+
+    this.server.emit(SocketEvents.ELIMINAR_JUGADOR, response);
+    return response;
+  }
 }
