@@ -1,6 +1,6 @@
 import { Coordenadas, Ficha } from '@prisma/client';
 
-export class FichaClass {
+export class FichaModel {
   public id: number;
   public color: string;
   public eliminada: boolean = false;

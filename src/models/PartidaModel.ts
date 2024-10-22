@@ -1,5 +1,5 @@
-import { JugadorClass } from './Jugador';
-import { TableroClass } from './Tablero';
+import { JugadorModel } from './JugadorModel';
+import { TableroModel } from './TableroModel';
 import {
   badRequest,
   created,
@@ -9,8 +9,8 @@ import {
 import { JugadorCreateDto } from '../dto/jugador.dto';
 import { estadoEnum, Ficha, Jugador, Partida } from '@prisma/client';
 
-export class PartidaClass {
-  public jugadores: JugadorClass[] = [];
+export class PartidaModel {
+  public jugadores: JugadorModel[] = [];
   public estado: estadoEnum = estadoEnum.EN_CURSO;
   public id: string;
   public codigo: string;
@@ -20,12 +20,12 @@ export class PartidaClass {
   public montoApuesta: number;
   public tableroSize: number;
   public fichasTotales: number;
-  public tablero: TableroClass;
+  public tablero: TableroModel;
   public turnoActual: number;
   constructor(data: Partial<Partida>) {
     this.id = data.id;
     this.jugadores = data.jugadores?.map(
-      (jugador) => new JugadorClass(jugador),
+      (jugador) => new JugadorModel(jugador),
     );
     this.estado = data.estado;
     this.codigo = data.codigo;
@@ -36,7 +36,7 @@ export class PartidaClass {
     this.tableroSize = data.tablerosize;
     this.fichasTotales = data.fichasTotales;
     this.turnoActual = data.turnoActual;
-    this.tablero = new TableroClass(data.tablero);
+    this.tablero = new TableroModel(data.tablero);
   }
 
   agregarJugador(
@@ -69,7 +69,7 @@ export class PartidaClass {
         fichas: fichas,
       };
       // Crear un nuevo jugador
-      const jugador = new JugadorClass(data);
+      const jugador = new JugadorModel(data);
       // Agregar el jugador a la partida
       this.jugadores?.push(jugador);
 

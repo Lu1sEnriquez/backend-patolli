@@ -8,12 +8,12 @@ import {
   internalServerError,
   SocketResponse,
 } from 'src/interface/socket-response';
-import { JugadorClass } from './entities/Jugador';
-import { PartidaClass } from './entities/Partida';
-import { TableroClass } from './entities/Tablero';
+import { JugadorModel } from '../models/JugadorModel';
+import { PartidaModel } from '../models/PartidaModel';
+import { TableroModel } from '../models/TableroModel';
 import { estadoEnum, Partida } from '@prisma/client';
-import { CreatePartidaDto } from './dto/partida.dto';
-import { JugadorCreateDto } from './dto/jugador.dto';
+import { CreatePartidaDto } from '../dto/partida.dto';
+import { JugadorCreateDto } from '../dto/jugador.dto';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
 @Injectable()
@@ -24,7 +24,7 @@ export class PartidaService {
     data: CreatePartidaDto,
   ): Promise<SocketResponse<Partida | null>> {
     try {
-      const jugadorUno = new JugadorClass({
+      const jugadorUno = new JugadorModel({
         id: 0,
         nombre: data.creadorNombre,
         color: data.colores[0],
@@ -35,7 +35,7 @@ export class PartidaService {
       });
       jugadorUno.crearFichas(data.fichasTotales);
 
-      const tablero = new TableroClass({
+      const tablero = new TableroModel({
         casillas: [],
         numeroCasillasPorAspa: data.tablerosize,
       });
@@ -43,7 +43,7 @@ export class PartidaService {
       // console.log(tablero.getData());
 
       const turnoActual = 0;
-      const nuevaPartida = new PartidaClass({
+      const nuevaPartida = new PartidaModel({
         id: new ObjectId().toString(),
         codigo: data.codigo,
         creadorNombre: data.creadorNombre,
@@ -97,14 +97,16 @@ export class PartidaService {
         return badRequest('Partida no encontrada');
       }
 
-      const partidaActualizada = new PartidaClass(partida);
+      const partidaActualizada = new PartidaModel(partida);
 
       const result = partidaActualizada.agregarJugador({
         nombre: jugadorDto.nombre,
       });
       // Crear el objeto JugadorClass desde el DTO
 
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { id, ...data } = partidaActualizada.getData();
+
       const partidaGuardada = await this.prisma.partida.update({
         where: { codigo: codigo },
         data: data,

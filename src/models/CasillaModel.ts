@@ -5,7 +5,7 @@ import {
   OrientacionCasilla,
 } from '@prisma/client';
 
-export class CasillaClass {
+export class CasillaModel {
   public id: number;
   public ocupanteId: number | null;
   public orientacion: OrientacionCasilla;

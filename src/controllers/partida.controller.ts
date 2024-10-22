@@ -12,7 +12,7 @@ import {
   SocketEvents,
   SocketResponse,
 } from 'src/interface/socket-response';
-import { CreatePartidaDto } from './dto/partida.dto';
+import { CreatePartidaDto } from '../dto/partida.dto';
 
 @WebSocketGateway({
   cors: {
@@ -21,7 +21,10 @@ import { CreatePartidaDto } from './dto/partida.dto';
     credentials: true, // Permitir credenciales
   },
 })
-export class PartidaGateway {
+
+// partida controller se encarga de utilizar
+//  el service y guardar la informacion
+export class PartidaController {
   @WebSocketServer()
   server: Server; // Servidor WebSocket
 
