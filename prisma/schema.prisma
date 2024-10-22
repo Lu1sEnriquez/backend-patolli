@@ -50,7 +50,7 @@ type Casilla {
   tipo        CasillaTypeEnum // Tipo de la casilla
   orientacion OrientacionCasilla // Orientación de la casilla
   posicion    Coordenadas // Coordenadas en el tablero
-  ocupanteId  Int? // ID de la ficha ocupante
+  ocupante    Ficha? //
 }
 
 // Tipos embebidos

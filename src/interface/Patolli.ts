@@ -3,6 +3,7 @@ export interface Partida {
   codigo?: string; // Código único de la partida
   jugadores: Jugador[]; // Lista de jugadores en la partida
   fondoApuestaFijo: number; // Fondo de apuesta fijo
+  fichasTotales: number; // Fichas totales que tendra cada jugador
   tablerosize: number; // Tamaño del tablero
   creadorNombre: string; // Nombre del creador de la partida
   colores: string[]; // Colores asignados a los jugadores
@@ -39,7 +40,7 @@ export interface Casilla {
   tipo: CasillaTypeEnum; // Tipo de la casilla
   orientacion: OrientacionCasilla; // Orientación de la casilla
   posicion: Coordenadas; // Coordenadas de la casilla en el tablero
-  ocupanteId?: number; // ID de la ficha ocupante, opcional
+  ocupante?: Ficha | null; // ficha ocupante, opcional
 }
 
 export interface Coordenadas {

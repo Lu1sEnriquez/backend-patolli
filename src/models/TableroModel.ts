@@ -85,7 +85,7 @@ export class TableroModel {
       const orientacion = this.getOrientacion(punto.X, punto.Y, size);
       const casilla = new CasillaModel({
         id: index,
-        ocupanteId: null,
+        ocupante: null,
         orientacion,
         posicion: { X: punto.X, Y: punto.Y },
         tipo,
