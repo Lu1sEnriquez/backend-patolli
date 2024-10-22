@@ -82,15 +82,15 @@ export class PartidaModel {
     jugadorData: Partial<JugadorCreateDto>,
   ): SocketResponse<Partida | null> {
     try {
-      const indice = this.jugadores?.findIndex(
+      const result = this.jugadores?.find(
         (jugador) => jugador.id === jugadorData.id,
       );
 
-      if (indice === -1) {
+      if (result === null) {
         return badRequest(`Usuario con id ${jugadorData.id} no encontrado`);
       }
 
-      this.jugadores.splice(indice, 1);
+      this.jugadores = this.jugadores.splice(jugadorData.id, 1);
       return created(
         this.getData(),
         `Jugador con id ${jugadorData.id} sacado correctamente`,

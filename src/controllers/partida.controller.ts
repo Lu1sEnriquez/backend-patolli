@@ -77,7 +77,7 @@ export class PartidaController {
   @SubscribeMessage(SocketEvents.ELIMINAR_JUGADOR)
   async sacarJugador(@MessageBody() data: string) {
     console.log(data);
-    let parsedDto: { codigo: string; nombre: string };
+    let parsedDto: { codigo: string; nombre: string; id: number };
 
     try {
       parsedDto = JSON.parse(data);
@@ -87,9 +87,7 @@ export class PartidaController {
       return badRequest('Invalid JSON format');
     }
     const response: SocketResponse<Partida | null> =
-      await this.partidaService.salirJugador(parsedDto.codigo, {
-        nombre: parsedDto.nombre,
-      });
+      await this.partidaService.salirJugador(parsedDto.codigo, {id:parsedDto.id});
 
     this.server.emit(SocketEvents.ELIMINAR_JUGADOR, response);
     return response;
