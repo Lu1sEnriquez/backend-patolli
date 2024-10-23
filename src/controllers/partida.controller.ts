@@ -106,7 +106,33 @@ export class PartidaController implements OnGatewayDisconnect {
     this.server.emit(SocketEvents.ELIMINAR_JUGADOR, response);
     return response;
   }
-  
+
+  @SubscribeMessage(SocketEvents.PAGAR_APUESTA)
+  async pagarApuesta(@MessageBody() data: string) {
+    console.log(data);
+    let parsedDto: {
+      codigo: string;
+      nombre: string;
+      id: number;
+    };
+
+    try {
+      parsedDto = JSON.parse(data);
+    } catch (error) {
+      console.log(error);
+
+      return badRequest('Invalid JSON format');
+    }
+    const response: SocketResponse<Partida | null> =
+      await this.partidaService.pagarApuesta(
+        parsedDto.codigo,
+        parsedDto.nombre,
+      );
+
+    this.server.emit(SocketEvents.PAGAR_APUESTA, response);
+    return response;
+  }
+
   async handleDisconnect(client: Socket) {
     const jugadorNombre = client.data.jugadorNombre;
     const codigoPartida = client.data.codigoPartida;

@@ -20,6 +20,7 @@ export enum SocketEvents {
   ACTUALIZAR_PARTIDA = 'actualizar_partida',
   DISCONNECT = 'disconnect',
   JUGADOR_DESCONECTADO = 'jugador_desconectado',
+  PAGAR_APUESTA = 'pagar_apuesta',
 }
 
 // Función para 200 OK
