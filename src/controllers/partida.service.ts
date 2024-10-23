@@ -38,7 +38,7 @@ export class PartidaService {
 
       const tablero = new TableroModel({
         casillas: [],
-        numeroCasillasPorAspa: data.tablerosize,
+        tableroSize: data.tableroSize,
       });
       tablero.generarCasillas();
       // console.log(tablero.getData());
@@ -51,7 +51,7 @@ export class PartidaService {
         colores: data.colores,
         fondoApuestaFijo: data.fondoApuestaFijo,
         montoApuesta: data.montoApuesta,
-        tablerosize: data.tablerosize,
+        tableroSize: data.tableroSize,
         tablero: tablero.getData(),
         turnoActual: turnoActual,
         fichasTotales: data.fichasTotales,
@@ -142,6 +142,7 @@ export class PartidaService {
         nombre: jugadorDto.nombre,
       });
 
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { id, ...data } = partidaActualizada.getData();
 
       const partidaGuardada = await this.prisma.partida.update({
@@ -181,6 +182,7 @@ export class PartidaService {
         nombre: jugadorNombre,
       });
 
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { id, ...data } = partidaActualizada.getData();
 
       const partidaGuardada = await this.prisma.partida.update({
@@ -255,6 +257,46 @@ export class PartidaService {
       );
       return internalServerError('Error interno del servidor al pagar apuesta');
     }
+      
+  // Movimientos de juego
+  async moverFichaEnPartida(
+    codigoPartida: string,
+    idJugador: number,
+    idFicha: number,
+    cantidad: number,
+  ): Promise<SocketResponse<Partida | null>> {
+    // Buscar la partida en la base de datos
+    const partida = await this.prisma.partida.findUnique({
+      where: { codigo: codigoPartida },
+    });
+
+    if (!partida) {
+      return badRequest(
+        `No se encontró la partida con código ${codigoPartida}`,
+      );
+    }
+    const partidaActualizada = new PartidaModel(partida);
+
+    const result = partidaActualizada.moverFicha(idJugador, idFicha, cantidad);
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { id, ...data } = partidaActualizada.getData();
+
+    const partidaGuardada = await this.prisma.partida.update({
+      where: { codigo: codigoPartida },
+      data: data,
+    });
+
+    // si todo a salido bien regresamos la partida actualizada
+    if (result.success) {
+      return created(partidaGuardada, 'Jugador agregado exitosamente');
+    }
+    // si la clase devuelve un error al agregar un usuario lo retornamos al cliente
+    return result;
+  }
+  catch(error) {
+    console.error('Error al unir jugador:', error);
+    return internalServerError('Error interno del servidor al unir jugador');
   }
 }
 

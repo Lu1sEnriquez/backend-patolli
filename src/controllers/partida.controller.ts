@@ -152,4 +152,69 @@ export class PartidaController implements OnGatewayDisconnect {
       this.server.emit(SocketEvents.JUGADOR_DESCONECTADO, response);
     }
   }
+
+  // metodos del juego
+
+  // Nuevo evento para ingresar ficha en el inicio
+  @SubscribeMessage(SocketEvents.INGRESAR_FICHA)
+  async ingresarFicha(
+    @MessageBody() data: string,
+    // @ConnectedSocket() client: Socket,
+  ) {
+    let parsedDto: {
+      codigo: string;
+      idJugador: number;
+      idFicha: number;
+      cantidad: number;
+    };
+
+    try {
+      parsedDto = JSON.parse(data);
+    } catch (error) {
+      console.log(error);
+      return badRequest('Invalid JSON format');
+    }
+
+    const response = await this.partidaService.moverFichaEnPartida(
+      parsedDto.codigo,
+      parsedDto.idJugador,
+      parsedDto.idFicha,
+      parsedDto.cantidad,
+    );
+
+    this.server.emit(SocketEvents.INGRESAR_FICHA, response);
+    return response;
+  }
+
+  // Mover ficha ya fue implementado anteriormente
+
+  // Nuevo evento para mover ficha
+  @SubscribeMessage(SocketEvents.MOVER_FICHA)
+  async moverFicha(@MessageBody() data: string) {
+    let parsedDto: {
+      codigo: string;
+      idJugador: number;
+      idFicha: number;
+      cantidad: number;
+    };
+
+    try {
+      parsedDto = JSON.parse(data);
+    } catch (error) {
+      console.log(error);
+      return badRequest('Invalid JSON format');
+    }
+
+    const response = await this.partidaService.moverFichaEnPartida(
+      parsedDto.codigo,
+      parsedDto.idJugador,
+      parsedDto.idFicha,
+      parsedDto.cantidad,
+    );
+
+    this.server.emit(SocketEvents.MOVER_FICHA, response);
+    console.log(response.message);
+
+    return response;
+  }
 }

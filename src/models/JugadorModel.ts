@@ -1,4 +1,4 @@
-import { Jugador } from '@prisma/client';
+import { Jugador, Ficha } from '@prisma/client';
 import { FichaModel } from './FichaModel';
 
 export class JugadorModel {
@@ -23,13 +23,19 @@ export class JugadorModel {
     this.isDisconnect = data.isDisconnect;
   }
 
+  // Buscar una ficha por su ID
+  buscarFichaPorId(idFicha: number): FichaModel | undefined {
+    return this.fichas.find((f) => f.id === idFicha);
+  }
+
   public crearFichas(fichasTotales: number) {
     this.fichas = Array.from({ length: fichasTotales }, (_, index) => {
-      const ficha = {
+      const ficha: Ficha = {
         id: index + 1,
         color: this.color,
         eliminada: false,
         posicion: null,
+        casillasAvanzadas: 0,
       };
       return new FichaModel(ficha);
     });

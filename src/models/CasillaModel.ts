@@ -21,6 +21,16 @@ export class CasillaModel {
     this.tipo = casillaData.tipo;
   }
 
+  // Método para calcular la nueva casilla sumando la cantidad
+  calcularNuevaCasilla(cantidad: number): number {
+    return this.id + cantidad;
+  }
+
+  // Verificar si la casilla está ocupada
+  estaOcupada(): boolean {
+    return this.ocupante !== null;
+  }
+
   getData(): Casilla {
     return {
       id: this.id,
