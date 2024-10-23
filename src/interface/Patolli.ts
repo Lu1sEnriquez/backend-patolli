@@ -24,7 +24,7 @@ export interface Jugador {
 }
 
 export interface Tablero {
-  numeroCasillasPorAspa: number; // Número de casillas por aspa
+  tableroSize: number; // Número de casillas por aspa
   casillas: Casilla[]; // Lista de casillas en el tablero
 }
 
@@ -40,6 +40,7 @@ export interface Ficha {
   color?: string; // Color de la ficha, opcional
   posicion?: Coordenadas; // Coordenadas en el tablero, opcional
   eliminada?: boolean; // Si la ficha está eliminada, opcional con valor por defecto 'false'
+  casillasAvanzadas: number; // Casillas avanzadas por la ficha
 }
 
 export interface Coordenadas {

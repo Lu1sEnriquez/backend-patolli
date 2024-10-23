@@ -33,7 +33,7 @@ export class PartidaModel {
     this.colores = data.colores;
     this.fondoApuestaFijo = data.fondoApuestaFijo;
     this.montoApuesta = data.montoApuesta;
-    this.tableroSize = data.tablerosize;
+    this.tableroSize = data.tableroSize;
     this.fichasTotales = data.fichasTotales;
     this.turnoActual = data.turnoActual;
     this.tablero = new TableroModel(data.tablero);
@@ -157,20 +157,6 @@ export class PartidaModel {
   reintegrarJugador(
     jugadorData: Partial<JugadorCreateDto>,
   ): SocketResponse<Partida | null> {
-    // const idJugador = this.jugadores?.length; // Asignar ID basado en el tamaño actual de jugadores
-    // const colorJugador = this.colores[idJugador] || null; // Asignar color al jugador
-
-    // const data: Jugador = {
-    //   id: jugadorData.id,
-    //   haPerdido: jugadorData.haPerdido,
-    //   turnoFicha: jugadorData.turnoFicha,
-    //   nombre: jugadorData.nombre,
-    //   fondoApuesta: jugadorData.fondoApuesta,
-    //   color: jugadorData.color,
-    //   fichas: jugadorData.fichas,
-    //   isDisconnect: false,
-    // };
-
     //actualizar el estado del usuario de la partida
     this.jugadores = this.jugadores.map((jugador) => {
       if (jugador.nombre === jugadorData.nombre) {
@@ -183,18 +169,81 @@ export class PartidaModel {
     return created(this.getData(), 'Jugador reconectado correctamente'); // Retornar la partida actualizada
   }
 
-  // generarTablero() {
-  //   this.tablero = new TableroClass({
-  //     numeroCasillasPorAspa: this.tableroSize,
-  //     casillas: [],
-  //   });
-
-  //   this.tablero.generarCasillas(this.tableroSize);
-  // }
-
   iniciarPartida() {
     this.estado = estadoEnum.EN_CURSO;
     // Lógica para iniciar la partida
+  }
+
+  // nuevo
+  moverFicha(idJugador: number, idFicha: number, cantidad: number) {
+    // Buscar el jugador por id
+    const jugador = this.buscarJugadorPorId(idJugador);
+    if (!jugador) {
+      return badRequest(`No se encontró al jugador con id ${idJugador}`);
+    }
+
+    // Buscar la ficha por id dentro del jugador
+    const ficha = jugador.buscarFichaPorId(idFicha);
+    if (!ficha) {
+      return badRequest(
+        `No se encontró la ficha con id ${idFicha} en el jugador con id ${idJugador}`,
+      );
+    }
+
+    if (ficha.eliminada) {
+      // Verificar si la ficha está eliminada
+      return badRequest(
+        `La ficha con id ${idFicha} ha sido eliminada y no puede moverse`,
+      );
+    }
+
+    if (ficha.casillasAvanzadas == 0) {
+      this.tablero.ingresarFicha(ficha, idJugador);
+
+      return created(
+        this.getData(),
+        `Ficha con id ${idFicha} introducida con éxito a la casilla de inicio`,
+      );
+    }
+
+    // Buscar la casilla actual donde se encuentra la ficha
+    const casillaActual = this.tablero.buscarCasillaPorFicha(idFicha);
+    if (!casillaActual) {
+      return badRequest(
+        `No se encontró la casilla actual para la ficha con id ${idFicha}`,
+      );
+    }
+
+    // Calcular la nueva casilla
+    const idNuevaCasilla = casillaActual.calcularNuevaCasilla(cantidad);
+
+    // Buscar la nueva casilla en el tablero
+    const nuevaCasilla = this.tablero.buscarCasillaPorId(idNuevaCasilla);
+    if (!nuevaCasilla) {
+      return badRequest(
+        `No se encontró la casilla destino con id ${idNuevaCasilla}`,
+      );
+    }
+
+    // Verificar si la nueva casilla está ocupada
+    if (nuevaCasilla.estaOcupada()) {
+      return badRequest(
+        `La casilla con id ${idNuevaCasilla} ya está ocupada por otra ficha`,
+      );
+    }
+
+    // Mover la ficha y actualizar casillas
+    this.tablero.moverFicha(ficha, casillaActual, nuevaCasilla);
+
+    return created(
+      this.getData(),
+      `Ficha con id ${idFicha} movida con éxito a la casilla con id ${idNuevaCasilla}`,
+    );
+  }
+
+  // Método auxiliar para buscar jugador
+  buscarJugadorPorId(idJugador: number): JugadorModel | undefined {
+    return this.jugadores.find((j) => j.id === idJugador);
   }
 
   getData(): Partida {
@@ -208,7 +257,7 @@ export class PartidaModel {
       turnoActual: this.turnoActual,
       estado: this.estado,
       fichasTotales: this.fichasTotales,
-      tablerosize: this.tableroSize,
+      tableroSize: this.tableroSize,
       jugadores: this.jugadores?.map((jugador) => jugador.getData()), // Usando getData de Jugador
       tablero: this.tablero.getData(), // Usando getData de Tablero
     };

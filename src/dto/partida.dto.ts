@@ -31,7 +31,7 @@ export class CreatePartidaDto implements Partida {
   @IsInt()
   @Min(8)
   @Min(14)
-  tablerosize: number;
+  tableroSize: number;
 
   @IsInt()
   @Min(1)

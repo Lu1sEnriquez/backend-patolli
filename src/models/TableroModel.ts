@@ -1,12 +1,13 @@
 import { CasillaTypeEnum, OrientacionCasilla, Tablero } from '@prisma/client';
 import { CasillaModel } from './CasillaModel';
+import { FichaModel } from './FichaModel';
 
 export class TableroModel {
-  casillas: CasillaModel[];
-  numeroCasillasPorAspa: number;
-
+  public casillas: CasillaModel[];
+  public tableroSize: number;
+  public meta: number;
   constructor(tablero: Tablero) {
-    this.numeroCasillasPorAspa = tablero?.numeroCasillasPorAspa || 0;
+    this.tableroSize = tablero?.tableroSize || 0;
     this.casillas =
       tablero?.casillas?.map((casilla) => new CasillaModel(casilla)) || [];
   }
@@ -74,9 +75,7 @@ export class TableroModel {
   }
 
   // Generar el tablero completo basándose en los puntos de la cruz
-  public generarCasillas(
-    size: number = this.numeroCasillasPorAspa,
-  ): CasillaModel[] {
+  public generarCasillas(size: number = this.tableroSize): CasillaModel[] {
     const puntosCruz = this.generarPuntosCruz(size);
     const casillas: CasillaModel[] = [];
 
@@ -258,11 +257,93 @@ export class TableroModel {
       return OrientacionCasilla.InferiorDerecha;
     }
   }
+  // GAME
+  // Buscar una casilla por la ficha
+  buscarCasillaPorFicha(idFicha: number): CasillaModel | undefined {
+    return this.casillas.find((c) => c.ocupante?.id === idFicha);
+  }
 
+  // Buscar una casilla por su ID
+  buscarCasillaPorId(id: number): CasillaModel | undefined {
+    return this.casillas.find((c) => c.id === id);
+  }
+
+  // Mover una ficha entre casillas
+  moverFicha(
+    ficha: FichaModel,
+    casillaActual: CasillaModel,
+    nuevaCasilla: CasillaModel,
+  ): FichaModel {
+    // Liberar la casilla actual
+    casillaActual.ocupante = null;
+
+    // Mover la ficha a la nueva casilla
+    nuevaCasilla.ocupante = ficha;
+
+    // Actualizar la posición de la ficha
+    ficha.posicion = nuevaCasilla.posicion;
+
+    this.casillas.splice(casillaActual.id, 1, casillaActual);
+    this.casillas.splice(nuevaCasilla.id, 1, nuevaCasilla);
+
+    return ficha;
+  }
+  // imgresar una ficha entre casillas
+  ingresarFicha(ficha: FichaModel, idJugador: number): FichaModel {
+    // Liberar la casilla actual
+    const casillaIdInicio = this.obtenerInicioJugador(idJugador);
+
+    const casillaInicio = this.casillas.find(
+      (casilla) => casilla.id == casillaIdInicio,
+    );
+
+    //  le asignamos la ficha ala casilla de inicio
+    casillaInicio.ocupante = ficha;
+
+    // Actualizar la posición de la ficha
+    ficha.posicion = casillaInicio.posicion;
+    ficha.casillasAvanzadas = 1;
+    this.casillas.splice(casillaIdInicio, 1, casillaInicio);
+
+    return ficha;
+  }
+
+  obtenerInicioJugador(idJugador: number): number {
+    switch (idJugador) {
+      case 0:
+        return 0;
+      case 1:
+        return this.tableroSize - 1;
+      case 2:
+        return (this.tableroSize - 1) * 2;
+      case 3:
+        return (this.tableroSize - 1) * 3;
+      default:
+        throw new Error('Jugador no válido');
+    }
+  }
+  obtenerMeta(): number {
+    return this.meta;
+  }
+
+  obtenerMetaJugador(idJugador: number): number {
+    switch (idJugador) {
+      case 1:
+        return this.tableroSize - this.casillas.length - 1;
+      case 2:
+        return this.tableroSize - 1 + this.casillas.length;
+      case 3:
+        return (this.tableroSize - 1) * 2 + this.casillas.length - 1;
+      case 4:
+        return (this.tableroSize - 1) * 3 + this.casillas.length - 1;
+      default:
+        throw new Error('Jugador no válido');
+    }
+  }
   // Obtener datos del tablero
   getData(): Tablero {
     return {
-      numeroCasillasPorAspa: this.numeroCasillasPorAspa,
+      tableroSize: this.tableroSize,
       casillas: this.casillas?.map((casilla) => casilla.getData()),
     };
   }

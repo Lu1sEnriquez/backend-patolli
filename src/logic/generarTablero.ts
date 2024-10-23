@@ -148,7 +148,7 @@ export const generarTablero = (size: number = 8) => {
   }
   const tablero: Tablero = {
     casillas: casillas,
-    numeroCasillasPorAspa: size,
+    tableroSize: size,
   };
   return tablero;
 };
