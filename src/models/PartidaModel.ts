@@ -146,7 +146,7 @@ export class PartidaModel {
 
       return created(
         this.getData(),
-        `El Jugador con nombre ${jugadorData.nombre} se ha desconectado`,
+        `El Jugador ${jugadorData.nombre} se ha desconectado`,
       ); // Retornar la partida actualizada
     } catch (error) {
       console.error('Error al desconectar jugador:', error);
@@ -167,6 +167,24 @@ export class PartidaModel {
     });
 
     return created(this.getData(), 'Jugador reconectado correctamente'); // Retornar la partida actualizada
+  }
+
+  pagarApuesta(
+    jugadorData: Partial<JugadorCreateDto>,
+  ): SocketResponse<Partida | null> {
+    this.jugadores = this.jugadores.map((jugador) => {
+      if (jugador.nombre === jugadorData.nombre) {
+        if (jugador.fondoApuesta - this.montoApuesta < 0) {
+          jugador.haPerdido = true;
+          return jugador;
+        }
+        jugador.fondoApuesta -= this.montoApuesta;
+        return jugador;
+      }
+      return jugador;
+    });
+
+    return created(this.getData(), 'Se pago la apuesta correctamente'); // Retornar la partida actualizada
   }
 
   iniciarPartida() {

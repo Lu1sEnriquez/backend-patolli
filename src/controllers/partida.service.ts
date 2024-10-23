@@ -192,7 +192,7 @@ export class PartidaService {
 
       // si todo a salido bien regresamos la partida actualizada
       if (result.success) {
-        return created(partidaGuardada, 'Jugador desconectado exitosamente');
+        return created(partidaGuardada, `Jugador ${jugadorNombre} se ha desconectado`);
       }
 
       return result;
@@ -204,8 +204,61 @@ export class PartidaService {
     }
   }
 
-  // Movimientos de juego
+  async pagarApuesta(
+    codigoPartida: string,
+    nombreJugador: string,
+  ): Promise<SocketResponse<Partida | null>> {
+    try {
+      const partida = await this.prisma.partida.findUnique({
+        where: { codigo: codigoPartida },
+      });
 
+      if (!partida) {
+        return badRequest('Partida no encontrada');
+      }
+
+      const partidaActualizada = new PartidaModel(partida);
+
+      const result = partidaActualizada.pagarApuesta(
+        {
+          nombre: nombreJugador,
+        }
+      );
+
+      const { id, ...data } = partidaActualizada.getData();
+
+      const partidaGuardada = await this.prisma.partida.update({
+        where: { codigo: partida.codigo },
+        data: data,
+      });
+
+      // si todo a salido bien regresamos la partida actualizada
+      if (result.success) {
+        if (
+          result.data.jugadores.find((j) => j.nombre === nombreJugador)
+            .haPerdido
+        ) {
+          return created(
+            partidaGuardada,
+            `El jugador ${nombreJugador} ha perdido`,
+          );
+        }
+        return created(
+          partidaGuardada,
+          `Se ha pagado la apuesta del jugador ${nombreJugador}`,
+        );
+      }
+
+      return result;
+    } catch (error) {
+      console.error(
+        `Error al pagar la apuesta del jugador ${nombreJugador}`,
+        error,
+      );
+      return internalServerError('Error interno del servidor al pagar apuesta');
+    }
+      
+  // Movimientos de juego
   async moverFichaEnPartida(
     codigoPartida: string,
     idJugador: number,
