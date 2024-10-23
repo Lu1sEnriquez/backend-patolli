@@ -1,4 +1,4 @@
-import { Jugador } from '@prisma/client';
+import { Jugador, Ficha } from '@prisma/client';
 import { FichaModel } from './FichaModel';
 
 export class JugadorModel {
@@ -9,6 +9,7 @@ export class JugadorModel {
   public color: string;
   public fondoApuesta: number;
   public haPerdido: boolean = false;
+  public isDisconnect: boolean = false;
   // constructor para crear envace a parametros
 
   constructor(data: Jugador) {
@@ -19,15 +20,22 @@ export class JugadorModel {
     this.fichas = data.fichas?.map((ficha) => new FichaModel(ficha));
     this.haPerdido = data.haPerdido;
     this.turnoFicha = data.turnoFicha;
+    this.isDisconnect = data.isDisconnect;
+  }
+
+  // Buscar una ficha por su ID
+  buscarFichaPorId(idFicha: number): FichaModel | undefined {
+    return this.fichas.find((f) => f.id === idFicha);
   }
 
   public crearFichas(fichasTotales: number) {
     this.fichas = Array.from({ length: fichasTotales }, (_, index) => {
-      const ficha = {
+      const ficha: Ficha = {
         id: index + 1,
         color: this.color,
         eliminada: false,
         posicion: null,
+        casillasAvanzadas: 0,
       };
       return new FichaModel(ficha);
     });
@@ -42,6 +50,7 @@ export class JugadorModel {
       haPerdido: this.haPerdido,
       turnoFicha: this.turnoFicha,
       fichas: this.fichas.map((ficha) => ficha.getData()), // Mapeamos los datos de las fichas también
+      isDisconnect: this.isDisconnect,
     };
   }
 }

@@ -12,7 +12,7 @@ model Partida {
   codigo           String      @unique // Código único de la partida
   jugadores        Jugador[] // Lista de jugadores en la partida
   fondoApuestaFijo Float // Fondo de apuesta
-  tablerosize      Int
+  tableroSize      Int
   creadorNombre    String
   fichasTotales    Int
   colores          String[]
@@ -31,18 +31,20 @@ type Jugador {
   color        String? // Color del jugador
   turnoFicha   Int
   fichas       Ficha[] // Fichas del jugador
+  isDisconnect Boolean @default(false) // Si el jugador se ha desconectado
 }
 
 type Ficha {
-  id        Int // Cambiado a auto-incremental
-  color     String? // Color de la ficha
-  posicion  Coordenadas? // Coordenadas en el tablero
-  eliminada Boolean?     @default(false) // Si la ficha está eliminada
+  id                Int // Cambiado a auto-incremental
+  color             String? // Color de la ficha
+  posicion          Coordenadas? // Coordenadas en el tablero
+  eliminada         Boolean?     @default(false) // Si la ficha está eliminada
+  casillasAvanzadas Int
 }
 
 type Tablero {
-  numeroCasillasPorAspa Int // Número de casillas por aspa
-  casillas              Casilla[] // Lista de casillas en el tablero
+  tableroSize Int // Número de casillas por aspa @map("tableroSize")
+  casillas    Casilla[] // Lista de casillas en el tablero
 }
 
 type Casilla {
