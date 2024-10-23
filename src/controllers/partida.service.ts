@@ -192,7 +192,10 @@ export class PartidaService {
 
       // si todo a salido bien regresamos la partida actualizada
       if (result.success) {
-        return created(partidaGuardada, `Jugador ${jugadorNombre} se ha desconectado`);
+        return created(
+          partidaGuardada,
+          `Jugador ${jugadorNombre} se ha desconectado`,
+        );
       }
 
       return result;
@@ -219,12 +222,11 @@ export class PartidaService {
 
       const partidaActualizada = new PartidaModel(partida);
 
-      const result = partidaActualizada.pagarApuesta(
-        {
-          nombre: nombreJugador,
-        }
-      );
+      const result = partidaActualizada.pagarApuesta({
+        nombre: nombreJugador,
+      });
 
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { id, ...data } = partidaActualizada.getData();
 
       const partidaGuardada = await this.prisma.partida.update({
@@ -257,7 +259,7 @@ export class PartidaService {
       );
       return internalServerError('Error interno del servidor al pagar apuesta');
     }
-      
+  }
   // Movimientos de juego
   async moverFichaEnPartida(
     codigoPartida: string,
@@ -294,12 +296,7 @@ export class PartidaService {
     // si la clase devuelve un error al agregar un usuario lo retornamos al cliente
     return result;
   }
-  catch(error) {
-    console.error('Error al unir jugador:', error);
-    return internalServerError('Error interno del servidor al unir jugador');
-  }
 }
-
 export const partidaExample = {
   creadorNombre: 'prueba',
   fondoApuestaFijo: 1000,
