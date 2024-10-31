@@ -1,6 +1,5 @@
 import { IsBoolean, IsInt, IsOptional, IsString } from 'class-validator';
-import { Coordenadas } from '@prisma/client';
-import { Ficha } from '../../dist/interface/Patolli';
+import { Coordenadas, Ficha } from '@prisma/client';
 
 export class FichaCreateDto implements Ficha {
   @IsInt()

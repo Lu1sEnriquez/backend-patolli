@@ -217,4 +217,24 @@ export class PartidaController implements OnGatewayDisconnect {
 
     return response;
   }
+  // iniciar Partida
+  @SubscribeMessage(SocketEvents.INICIAR_PARTIDA)
+  async iniciarPartida(@MessageBody() data: string) {
+    let parsedDto: {
+      codigo: string;
+    };
+
+    try {
+      parsedDto = JSON.parse(data);
+    } catch (error) {
+      console.log(error);
+      return badRequest('Invalid JSON format');
+    }
+
+    const response = await this.partidaService.iniciarPartida(parsedDto.codigo);
+    this.server.emit(SocketEvents.INICIAR_PARTIDA, response);
+    console.log(response.message);
+
+    return response;
+  }
 }

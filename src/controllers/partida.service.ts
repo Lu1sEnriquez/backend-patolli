@@ -34,6 +34,7 @@ export class PartidaService {
         turnoFicha: 0,
         isDisconnect: false,
       });
+
       jugadorUno.crearFichas(data.fichasTotales);
 
       const tablero = new TableroModel({
@@ -296,17 +297,35 @@ export class PartidaService {
     // si la clase devuelve un error al agregar un usuario lo retornamos al cliente
     return result;
   }
+
+  async iniciarPartida(codigoPartida: string) {
+    // Buscar la partida en la base de datos
+    const partida = await this.prisma.partida.findUnique({
+      where: { codigo: codigoPartida },
+    });
+
+    if (!partida) {
+      return badRequest(
+        `No se encontró la partida con código ${codigoPartida}`,
+      );
+    }
+    const partidaActualizada = new PartidaModel(partida);
+
+    const result = partidaActualizada.iniciarPartida();
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { id, ...data } = partidaActualizada.getData();
+
+    const partidaGuardada = await this.prisma.partida.update({
+      where: { codigo: codigoPartida },
+      data: data,
+    });
+
+    // si todo a salido bien regresamos la partida actualizada
+    if (result.success) {
+      return created(partidaGuardada, 'Partida Iniciada Correctamente');
+    }
+    // si la clase devuelve un error al agregar un usuario lo retornamos al cliente
+    return result;
+  }
 }
-export const partidaExample = {
-  creadorNombre: 'prueba',
-  fondoApuestaFijo: 1000,
-  montoApuesta: 100,
-  tablerosize: 8,
-  codigo: '1234',
-  colores: ['verde', 'rojo', 'azul', 'amarillo'],
-  estado: 'EN_ESPERA',
-  // id: '123132131',
-  jugadores: [],
-  tablero: { casillas: [], numeroCasillasPorAspa: 8 },
-  turnoActual: 0,
-};

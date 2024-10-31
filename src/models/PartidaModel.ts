@@ -4,6 +4,7 @@ import {
   badRequest,
   created,
   internalServerError,
+  ok,
   SocketResponse,
 } from 'src/interface/socket-response';
 import { JugadorCreateDto } from '../dto/jugador.dto';
@@ -187,9 +188,13 @@ export class PartidaModel {
     return created(this.getData(), 'Se pago la apuesta correctamente'); // Retornar la partida actualizada
   }
 
-  iniciarPartida() {
+  iniciarPartida(): SocketResponse<Partida | null> {
+    if (this.jugadores.length < 2)
+      return badRequest('se necesitan almenos 2 jugadores');
+
     this.estado = estadoEnum.EN_CURSO;
     // Lógica para iniciar la partida
+    return ok(this.getData(), 'inicio Partida correctamente');
   }
 
   // nuevo

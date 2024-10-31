@@ -23,6 +23,7 @@ export enum SocketEvents {
   PAGAR_APUESTA = 'pagar_apuesta',
   MOVER_FICHA = 'mover_ficha',
   INGRESAR_FICHA = 'ingresar_ficha',
+  INICIAR_PARTIDA = 'iniciar_partida',
 }
 
 // Función para 200 OK
