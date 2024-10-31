@@ -197,15 +197,68 @@ export class PartidaModel {
     return ok(this.getData(), 'inicio Partida correctamente');
   }
 
-  // nuevo
-  moverFicha(idJugador: number, idFicha: number, cantidad: number) {
-    // Buscar el jugador por id
+  moverFichaPagando(idJugador: number, idFicha: number, cantidad: number) {
+    const jugador = this.buscarJugadorPorId(idJugador);
+    if (!jugador)
+      return badRequest(`No se encontró al jugador con id ${idJugador}`);
+
+    // Verificar si el jugador tiene fichas para mover o ingresar
+    if (jugador.fichas.every((ficha) => ficha.casillasAvanzadas > 0)) {
+      return this.moverFicha(idJugador, idFicha, cantidad);
+    } else if (cantidad === 1) {
+      // Paga apuesta si el dado no permite movimiento
+      jugador.pagarApuesta(this.montoApuesta);
+    }
+
+    return this.moverFicha(idJugador, idFicha, cantidad);
+  }
+
+  moverFichaAutomatico(idJugador: number, cantidad: number) {
     const jugador = this.buscarJugadorPorId(idJugador);
     if (!jugador) {
       return badRequest(`No se encontró al jugador con id ${idJugador}`);
     }
 
-    // Buscar la ficha por id dentro del jugador
+    // Si la cantidad es 1, intentamos mover la siguiente ficha que no está en el tablero
+    if (cantidad === 1) {
+      const fichaSiguiente = jugador.fichas.find(
+        (ficha) => ficha.casillasAvanzadas == 0,
+      );
+
+      if (fichaSiguiente && fichaSiguiente.casillasAvanzadas === 0) {
+        // Intentar ingresar ficha 0
+        const ingresoResult = this.moverFicha(
+          idJugador,
+          fichaSiguiente.id,
+          cantidad,
+        );
+        if (ingresoResult) {
+          return ingresoResult; // Retorna si la ficha fue ingresada
+        }
+      }
+
+      // Si no se pudo ingresar ficha 0, intenta mover la siguiente ficha disponible
+      const ficha = jugador.getProximaFicha(this.tablero.meta);
+      if (!ficha) return badRequest(`No hay fichas disponibles para mover`);
+
+      // Mover la ficha usando la cantidad tirada
+      return this.moverFicha(idJugador, ficha.id, cantidad);
+    }
+
+    // En caso de que la cantidad no sea 1, mover la siguiente ficha disponible
+    const ficha = jugador.getProximaFicha(this.tablero.meta);
+    if (!ficha) return badRequest(`No hay fichas disponibles para mover`);
+
+    // Mover la ficha usando la cantidad tirada
+    return this.moverFicha(idJugador, ficha.id, cantidad);
+  }
+
+  moverFicha(idJugador: number, idFicha: number, cantidad: number) {
+    const jugador = this.buscarJugadorPorId(idJugador);
+    if (!jugador) {
+      return badRequest(`No se encontró al jugador con id ${idJugador}`);
+    }
+
     const ficha = jugador.buscarFichaPorId(idFicha);
     if (!ficha) {
       return badRequest(
@@ -214,54 +267,70 @@ export class PartidaModel {
     }
 
     if (ficha.eliminada) {
-      // Verificar si la ficha está eliminada
       return badRequest(
         `La ficha con id ${idFicha} ha sido eliminada y no puede moverse`,
       );
     }
 
-    if (ficha.casillasAvanzadas == 0) {
-      this.tablero.ingresarFicha(ficha, idJugador);
+    // Lógica para ingresar la ficha si el dado cae en 1
+    if (cantidad === 1 && ficha.casillasAvanzadas === 0) {
+      // Verifica si puede ingresar una nueva ficha
+      console.log(`ingresar ficha  ${ficha.id}`);
 
+      this.tablero.ingresarFicha(ficha, idJugador);
       return created(
         this.getData(),
         `Ficha con id ${idFicha} introducida con éxito a la casilla de inicio`,
       );
-    }
 
-    // Buscar la casilla actual donde se encuentra la ficha
-    const casillaActual = this.tablero.buscarCasillaPorFicha(idFicha);
-    if (!casillaActual) {
       return badRequest(
-        `No se encontró la casilla actual para la ficha con id ${idFicha}`,
+        `No puedes introducir una nueva ficha, ya tienes 6 fichas en el tablero`,
       );
     }
 
-    // Calcular la nueva casilla
-    const idNuevaCasilla = casillaActual.calcularNuevaCasilla(cantidad);
+    // Movimiento normal de la ficha
+    if (ficha.casillasAvanzadas > 0) {
+      const casillaActual = this.tablero.buscarCasillaPorFicha(idFicha);
+      if (!casillaActual) {
+        return badRequest(
+          `No se encontró la casilla actual para la ficha con id ${idFicha}`,
+        );
+      }
 
-    // Buscar la nueva casilla en el tablero
-    const nuevaCasilla = this.tablero.buscarCasillaPorId(idNuevaCasilla);
-    if (!nuevaCasilla) {
-      return badRequest(
-        `No se encontró la casilla destino con id ${idNuevaCasilla}`,
+      const idNuevaCasilla = casillaActual.calcularNuevaCasilla(cantidad);
+      const nuevaCasilla = this.tablero.buscarCasillaPorId(idNuevaCasilla);
+      if (!nuevaCasilla) {
+        return badRequest(
+          `No se encontró la casilla destino con id ${idNuevaCasilla}`,
+        );
+      }
+
+      if (nuevaCasilla.estaOcupada()) {
+        if (nuevaCasilla.tipo === 'CENTRAL') {
+          // Eliminar ficha ocupante
+          const { ocupante } = this.tablero.buscarCasillaPorId(nuevaCasilla.id);
+          if (ocupante) ocupante.eliminada = true; // Elimina la ficha
+        } else {
+          // Devolver la ficha a su posición original
+          this.tablero.devolverFicha(ficha, casillaActual);
+        }
+      }
+
+      // Pagar apuesta si es una casilla de triángulo
+      if (nuevaCasilla.tipo === 'TRIANGULO') {
+        jugador.pagarApuesta(this.montoApuesta * 2); // Pago doble
+      }
+
+      // Mover la ficha y actualizar casillas
+      this.tablero.moverFicha(ficha, casillaActual, nuevaCasilla);
+
+      return created(
+        this.getData(),
+        `Ficha con id ${idFicha} movida con éxito a la casilla con id ${idNuevaCasilla}`,
       );
     }
 
-    // Verificar si la nueva casilla está ocupada
-    if (nuevaCasilla.estaOcupada()) {
-      return badRequest(
-        `La casilla con id ${idNuevaCasilla} ya está ocupada por otra ficha`,
-      );
-    }
-
-    // Mover la ficha y actualizar casillas
-    this.tablero.moverFicha(ficha, casillaActual, nuevaCasilla);
-
-    return created(
-      this.getData(),
-      `Ficha con id ${idFicha} movida con éxito a la casilla con id ${idNuevaCasilla}`,
-    );
+    return badRequest(`No se puede mover la ficha con id ${idFicha}`);
   }
 
   // Método auxiliar para buscar jugador

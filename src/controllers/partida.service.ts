@@ -262,7 +262,7 @@ export class PartidaService {
     }
   }
   // Movimientos de juego
-  async moverFichaEnPartida(
+  async moverFichaPagandoEnPartida(
     codigoPartida: string,
     idJugador: number,
     idFicha: number,
@@ -280,7 +280,11 @@ export class PartidaService {
     }
     const partidaActualizada = new PartidaModel(partida);
 
-    const result = partidaActualizada.moverFicha(idJugador, idFicha, cantidad);
+    const result = partidaActualizada.moverFichaPagando(
+      idJugador,
+      idFicha,
+      cantidad,
+    );
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { id, ...data } = partidaActualizada.getData();
@@ -292,7 +296,44 @@ export class PartidaService {
 
     // si todo a salido bien regresamos la partida actualizada
     if (result.success) {
-      return created(partidaGuardada, 'Jugador agregado exitosamente');
+      return created(partidaGuardada, 'Se movio la ficha Exitosamente');
+    }
+    // si la clase devuelve un error al agregar un usuario lo retornamos al cliente
+    return result;
+  }
+
+  // Movimientos de juego
+  async moverFichaAutomaticoEnPartida(
+    codigoPartida: string,
+    idJugador: number,
+
+    cantidad: number,
+  ): Promise<SocketResponse<Partida | null>> {
+    // Buscar la partida en la base de datos
+    const partida = await this.prisma.partida.findUnique({
+      where: { codigo: codigoPartida },
+    });
+
+    if (!partida) {
+      return badRequest(
+        `No se encontró la partida con código ${codigoPartida}`,
+      );
+    }
+    const partidaActualizada = new PartidaModel(partida);
+
+    const result = partidaActualizada.moverFichaAutomatico(idJugador, cantidad);
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { id, ...data } = partidaActualizada.getData();
+
+    const partidaGuardada = await this.prisma.partida.update({
+      where: { codigo: codigoPartida },
+      data: data,
+    });
+
+    // si todo a salido bien regresamos la partida actualizada
+    if (result.success) {
+      return created(partidaGuardada, 'Se movio la ficha Exitosamente');
     }
     // si la clase devuelve un error al agregar un usuario lo retornamos al cliente
     return result;

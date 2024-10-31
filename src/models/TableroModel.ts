@@ -1,6 +1,7 @@
 import { CasillaTypeEnum, OrientacionCasilla, Tablero } from '@prisma/client';
 import { CasillaModel } from './CasillaModel';
 import { FichaModel } from './FichaModel';
+import { badRequest, ok } from 'src/interface/socket-response';
 
 export class TableroModel {
   public casillas: CasillaModel[];
@@ -306,6 +307,38 @@ export class TableroModel {
     this.casillas.splice(casillaIdInicio, 1, casillaInicio);
 
     return ficha;
+  }
+
+  // TableroModel.ts
+
+  public devolverFicha(ficha: FichaModel, casillaActual: CasillaModel) {
+    // Asegurarse de que la ficha no está eliminada
+    if (ficha.eliminada) {
+      return badRequest(
+        `No se puede devolver la ficha con id ${ficha.id} porque está eliminada`,
+      );
+    }
+
+    // Devolver la ficha a su posición original (casillaActual)
+    const casillaDeInicio = this.buscarCasillaPorId(casillaActual.id);
+
+    if (!casillaDeInicio) {
+      return badRequest(
+        `La casilla de inicio con id ${casillaActual.id} no se encontró`,
+      );
+    }
+
+    // Restablecer el estado de la ficha
+    ficha.casillasAvanzadas = 0; // Volver a la posición inicial
+    ficha.eliminada = false; // Marcar la ficha como activa
+
+    // Asignar la ficha a la casilla de inicio
+    casillaDeInicio.ocupante = ficha; // Asumimos que cada casilla puede tener un ocupante
+
+    return ok(
+      this.getData(),
+      `Ficha con id ${ficha.id} devuelta a la casilla con id ${casillaActual.id} correctamente`,
+    );
   }
 
   obtenerInicioJugador(idJugador: number): number {

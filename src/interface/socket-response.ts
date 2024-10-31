@@ -21,9 +21,10 @@ export enum SocketEvents {
   DISCONNECT = 'disconnect',
   JUGADOR_DESCONECTADO = 'jugador_desconectado',
   PAGAR_APUESTA = 'pagar_apuesta',
-  MOVER_FICHA = 'mover_ficha',
-  INGRESAR_FICHA = 'ingresar_ficha',
   INICIAR_PARTIDA = 'iniciar_partida',
+  INGRESAR_FICHA = 'ingresar_ficha',
+  MOVER_FICHA_PAGANDO = 'mover_ficha_pagando',
+  MOVER_FICHA_AUTOMATICO = 'mover_ficha_automatico',
 }
 
 // Función para 200 OK

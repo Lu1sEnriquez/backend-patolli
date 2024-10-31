@@ -8,10 +8,10 @@ import {
 
 export class CasillaModel {
   public id: number;
-  public ocupante: Ficha | null;
+  public ocupante?: Ficha | null;
   public orientacion: OrientacionCasilla;
   public posicion: Coordenadas;
-  public tipo: CasillaTypeEnum;
+  public tipo?: CasillaTypeEnum;
 
   constructor(casillaData: Casilla) {
     this.id = casillaData.id;

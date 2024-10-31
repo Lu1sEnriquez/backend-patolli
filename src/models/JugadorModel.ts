@@ -28,10 +28,35 @@ export class JugadorModel {
     return this.fichas.find((f) => f.id === idFicha);
   }
 
+  // Método para seleccionar la próxima ficha en orden de entrada
+  getProximaFicha(meta: number): FichaModel | undefined {
+    const totalFichas = this.fichas.length;
+
+    // Si no hay fichas, retornamos undefined
+    if (totalFichas === 0) return undefined;
+
+    // Comenzamos desde la posición actual
+    for (let i = 0; i < totalFichas; i++) {
+      // Calculamos el índice de la próxima ficha a seleccionar
+      const index = (this.turnoFicha + i) % totalFichas;
+      const ficha = this.fichas[index];
+
+      // Verificamos que la ficha no esté eliminada y que no haya alcanzado la meta
+      if (!ficha.eliminada && !ficha.haAlcanzadoMeta(meta)) {
+        // Actualizamos turnoFicha para la próxima selección
+        this.turnoFicha = (index + 1) % totalFichas;
+        return ficha; // Retornamos la ficha encontrada
+      }
+    }
+
+    // Si todas las fichas han alcanzado la meta, retornamos undefined
+    return undefined;
+  }
+
   public crearFichas(fichasTotales: number) {
     this.fichas = Array.from({ length: fichasTotales }, (_, index) => {
       const ficha: Ficha = {
-        id: index + 1,
+        id: index,
         color: this.color,
         eliminada: false,
         posicion: null,
@@ -41,6 +66,15 @@ export class JugadorModel {
     });
   }
 
+  public pagarApuesta(monto: number) {
+    this.fondoApuesta -= monto;
+
+    if (this.fondoApuesta <= 0) {
+      this.haPerdido = false;
+    }
+
+    return this.getData();
+  }
   getData(): Jugador {
     return {
       id: this.id,

@@ -175,7 +175,7 @@ export class PartidaController implements OnGatewayDisconnect {
       return badRequest('Invalid JSON format');
     }
 
-    const response = await this.partidaService.moverFichaEnPartida(
+    const response = await this.partidaService.moverFichaPagandoEnPartida(
       parsedDto.codigo,
       parsedDto.idJugador,
       parsedDto.idFicha,
@@ -189,8 +189,8 @@ export class PartidaController implements OnGatewayDisconnect {
   // Mover ficha ya fue implementado anteriormente
 
   // Nuevo evento para mover ficha
-  @SubscribeMessage(SocketEvents.MOVER_FICHA)
-  async moverFicha(@MessageBody() data: string) {
+  @SubscribeMessage(SocketEvents.MOVER_FICHA_AUTOMATICO)
+  async moverFichaPagando(@MessageBody() data: string) {
     let parsedDto: {
       codigo: string;
       idJugador: number;
@@ -205,18 +205,47 @@ export class PartidaController implements OnGatewayDisconnect {
       return badRequest('Invalid JSON format');
     }
 
-    const response = await this.partidaService.moverFichaEnPartida(
+    const response = await this.partidaService.moverFichaPagandoEnPartida(
       parsedDto.codigo,
       parsedDto.idJugador,
       parsedDto.idFicha,
       parsedDto.cantidad,
     );
 
-    this.server.emit(SocketEvents.MOVER_FICHA, response);
+    this.server.emit(SocketEvents.MOVER_FICHA_PAGANDO, response);
     console.log(response.message);
 
     return response;
   }
+
+  @SubscribeMessage(SocketEvents.MOVER_FICHA_AUTOMATICO)
+  async moverFichaAutomatico(@MessageBody() data: string) {
+    let parsedDto: {
+      codigo: string;
+      idJugador: number;
+
+      cantidad: number;
+    };
+
+    try {
+      parsedDto = JSON.parse(data);
+    } catch (error) {
+      console.log(error);
+      return badRequest('Invalid JSON format');
+    }
+
+    const response = await this.partidaService.moverFichaAutomaticoEnPartida(
+      parsedDto.codigo,
+      parsedDto.idJugador,
+      parsedDto.cantidad,
+    );
+
+    this.server.emit(SocketEvents.MOVER_FICHA_AUTOMATICO, response);
+    console.log(response.message);
+
+    return response;
+  }
+
   // iniciar Partida
   @SubscribeMessage(SocketEvents.INICIAR_PARTIDA)
   async iniciarPartida(@MessageBody() data: string) {
