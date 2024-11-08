@@ -213,47 +213,34 @@ export class PartidaModel {
     return this.moverFicha(idJugador, idFicha, cantidad);
   }
 
-  moverFichaAutomatico(idJugador: number, cantidad: number) {
+  moverFichaAutomatico(
+    idJugador: number,
+    cantidad: number,
+  ): SocketResponse<Partida | null> {
     const jugador = this.buscarJugadorPorId(idJugador);
     if (!jugador) {
       return badRequest(`No se encontró al jugador con id ${idJugador}`);
     }
 
-    // Si la cantidad es 1, intentamos mover la siguiente ficha que no está en el tablero
-    if (cantidad === 1) {
-      const fichaSiguiente = jugador.fichas.find(
-        (ficha) => ficha.casillasAvanzadas == 0,
-      );
-
-      if (fichaSiguiente && fichaSiguiente.casillasAvanzadas === 0) {
-        // Intentar ingresar ficha 0
-        const ingresoResult = this.moverFicha(
-          idJugador,
-          fichaSiguiente.id,
-          cantidad,
-        );
-        if (ingresoResult) {
-          return ingresoResult; // Retorna si la ficha fue ingresada
-        }
-      }
-
-      // Si no se pudo ingresar ficha 0, intenta mover la siguiente ficha disponible
-      const ficha = jugador.getProximaFicha(this.tablero.meta);
-      if (!ficha) return badRequest(`No hay fichas disponibles para mover`);
-
-      // Mover la ficha usando la cantidad tirada
-      return this.moverFicha(idJugador, ficha.id, cantidad);
+    if (cantidad == 0) {
+      jugador.pagarApuesta(this.montoApuesta);
+      return ok(this.getData());
     }
 
-    // En caso de que la cantidad no sea 1, mover la siguiente ficha disponible
-    const ficha = jugador.getProximaFicha(this.tablero.meta);
+    const ficha = jugador.getProximaFicha(cantidad, this.tablero.meta);
+    console.log(ficha);
+
     if (!ficha) return badRequest(`No hay fichas disponibles para mover`);
 
     // Mover la ficha usando la cantidad tirada
     return this.moverFicha(idJugador, ficha.id, cantidad);
   }
 
-  moverFicha(idJugador: number, idFicha: number, cantidad: number) {
+  moverFicha(
+    idJugador: number,
+    idFicha: number,
+    cantidad: number,
+  ): SocketResponse<Partida | null> {
     const jugador = this.buscarJugadorPorId(idJugador);
     if (!jugador) {
       return badRequest(`No se encontró al jugador con id ${idJugador}`);
@@ -282,10 +269,6 @@ export class PartidaModel {
         this.getData(),
         `Ficha con id ${idFicha} introducida con éxito a la casilla de inicio`,
       );
-
-      return badRequest(
-        `No puedes introducir una nueva ficha, ya tienes 6 fichas en el tablero`,
-      );
     }
 
     // Movimiento normal de la ficha
@@ -308,11 +291,13 @@ export class PartidaModel {
       if (nuevaCasilla.estaOcupada()) {
         if (nuevaCasilla.tipo === 'CENTRAL') {
           // Eliminar ficha ocupante
-          const { ocupante } = this.tablero.buscarCasillaPorId(nuevaCasilla.id);
-          if (ocupante) ocupante.eliminada = true; // Elimina la ficha
+          const { ocupantes } = this.tablero.buscarCasillaPorId(
+            nuevaCasilla.id,
+          );
+          if (ocupantes) ocupantes.every((ficha) => (ficha.eliminada = true)); // Elimina la ficha
         } else {
           // Devolver la ficha a su posición original
-          this.tablero.devolverFicha(ficha, casillaActual);
+          this.tablero.devolverFicha(ficha, casillaActual, cantidad);
         }
       }
 
@@ -322,7 +307,7 @@ export class PartidaModel {
       }
 
       // Mover la ficha y actualizar casillas
-      this.tablero.moverFicha(ficha, casillaActual, nuevaCasilla);
+      this.tablero.moverFicha(ficha, casillaActual, nuevaCasilla, cantidad);
 
       return created(
         this.getData(),

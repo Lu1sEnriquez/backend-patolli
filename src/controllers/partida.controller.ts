@@ -189,7 +189,7 @@ export class PartidaController implements OnGatewayDisconnect {
   // Mover ficha ya fue implementado anteriormente
 
   // Nuevo evento para mover ficha
-  @SubscribeMessage(SocketEvents.MOVER_FICHA_AUTOMATICO)
+  @SubscribeMessage(SocketEvents.MOVER_FICHA_PAGANDO)
   async moverFichaPagando(@MessageBody() data: string) {
     let parsedDto: {
       codigo: string;

@@ -85,7 +85,7 @@ export class TableroModel {
       const orientacion = this.getOrientacion(punto.X, punto.Y, size);
       const casilla = new CasillaModel({
         id: index,
-        ocupante: null,
+        ocupantes: [],
         orientacion,
         posicion: { X: punto.X, Y: punto.Y },
         tipo,
@@ -261,7 +261,7 @@ export class TableroModel {
   // GAME
   // Buscar una casilla por la ficha
   buscarCasillaPorFicha(idFicha: number): CasillaModel | undefined {
-    return this.casillas.find((c) => c.ocupante?.id === idFicha);
+    return this.casillas.find((c) => c.ocupantes.find((f) => f.id == idFicha));
   }
 
   // Buscar una casilla por su ID
@@ -269,37 +269,43 @@ export class TableroModel {
     return this.casillas.find((c) => c.id === id);
   }
 
+  // TableroModel.ts
+
   // Mover una ficha entre casillas
   moverFicha(
     ficha: FichaModel,
     casillaActual: CasillaModel,
     nuevaCasilla: CasillaModel,
+    cantidad: number,
   ): FichaModel {
-    // Liberar la casilla actual
-    casillaActual.ocupante = null;
+    // Eliminar la ficha de la casilla actual
+    casillaActual.ocupantes = casillaActual.ocupantes.filter(
+      (f) => f.id !== ficha.id,
+    );
 
-    // Mover la ficha a la nueva casilla
-    nuevaCasilla.ocupante = ficha;
+    // Agregar la ficha a la nueva casilla
+    nuevaCasilla.ocupantes.push(ficha);
 
     // Actualizar la posición de la ficha
     ficha.posicion = nuevaCasilla.posicion;
+    ficha.casillasAvanzadas += cantidad;
 
+    // Actualizar las casillas en el tablero
     this.casillas.splice(casillaActual.id, 1, casillaActual);
     this.casillas.splice(nuevaCasilla.id, 1, nuevaCasilla);
 
     return ficha;
   }
-  // imgresar una ficha entre casillas
-  ingresarFicha(ficha: FichaModel, idJugador: number): FichaModel {
-    // Liberar la casilla actual
-    const casillaIdInicio = this.obtenerInicioJugador(idJugador);
 
+  // Ingresar una ficha en la casilla de inicio de un jugador
+  ingresarFicha(ficha: FichaModel, idJugador: number): FichaModel {
+    const casillaIdInicio = this.obtenerInicioJugador(idJugador);
     const casillaInicio = this.casillas.find(
-      (casilla) => casilla.id == casillaIdInicio,
+      (casilla) => casilla.id === casillaIdInicio,
     );
 
-    //  le asignamos la ficha ala casilla de inicio
-    casillaInicio.ocupante = ficha;
+    // Agregar la ficha a la casilla de inicio
+    casillaInicio.ocupantes.push(ficha);
 
     // Actualizar la posición de la ficha
     ficha.posicion = casillaInicio.posicion;
@@ -309,31 +315,29 @@ export class TableroModel {
     return ficha;
   }
 
-  // TableroModel.ts
-
-  public devolverFicha(ficha: FichaModel, casillaActual: CasillaModel) {
-    // Asegurarse de que la ficha no está eliminada
+  // Devolver una ficha a una casilla
+  devolverFicha(
+    ficha: FichaModel,
+    casillaActual: CasillaModel,
+    cantidad: number,
+  ) {
     if (ficha.eliminada) {
       return badRequest(
         `No se puede devolver la ficha con id ${ficha.id} porque está eliminada`,
       );
     }
 
-    // Devolver la ficha a su posición original (casillaActual)
     const casillaDeInicio = this.buscarCasillaPorId(casillaActual.id);
-
     if (!casillaDeInicio) {
       return badRequest(
         `La casilla de inicio con id ${casillaActual.id} no se encontró`,
       );
     }
 
-    // Restablecer el estado de la ficha
-    ficha.casillasAvanzadas = 0; // Volver a la posición inicial
-    ficha.eliminada = false; // Marcar la ficha como activa
-
-    // Asignar la ficha a la casilla de inicio
-    casillaDeInicio.ocupante = ficha; // Asumimos que cada casilla puede tener un ocupante
+    // Actualizar el estado de la ficha y devolverla a su posición inicial
+    ficha.casillasAvanzadas -= cantidad;
+    ficha.eliminada = false;
+    casillaDeInicio.ocupantes.push(ficha);
 
     return ok(
       this.getData(),
