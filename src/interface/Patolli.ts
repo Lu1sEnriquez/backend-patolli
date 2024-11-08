@@ -33,7 +33,7 @@ export interface Casilla {
   tipo: CasillaTypeEnum; // Tipo de la casilla
   orientacion: OrientacionCasilla; // Orientación de la casilla
   posicion: Coordenadas; // Coordenadas de la casilla en el tablero
-  ocupante?: Ficha | null; // ficha ocupante, opcional
+  ocupantes: Ficha[]; // ficha ocupante, opcional
 }
 export interface Ficha {
   id: number; // ID incremental
