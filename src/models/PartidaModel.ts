@@ -217,6 +217,7 @@ export class PartidaModel {
     idJugador: number,
     cantidad: number,
   ): SocketResponse<Partida | null> {
+    this.siguienteTurno();
     const jugador = this.buscarJugadorPorId(idJugador);
     if (!jugador) {
       return badRequest(`No se encontró al jugador con id ${idJugador}`);
@@ -260,7 +261,7 @@ export class PartidaModel {
     }
 
     // Lógica para ingresar la ficha si el dado cae en 1
-    if (cantidad === 1 && ficha.casillasAvanzadas === 0) {
+    if (cantidad === 1 && !ficha.dentroDelTablero()) {
       // Verifica si puede ingresar una nueva ficha
       console.log(`ingresar ficha  ${ficha.id}`);
 
@@ -272,15 +273,18 @@ export class PartidaModel {
     }
 
     // Movimiento normal de la ficha
-    if (ficha.casillasAvanzadas > 0) {
-      const casillaActual = this.tablero.buscarCasillaPorFicha(idFicha);
+    if (ficha.dentroDelTablero()) {
+      const casillaActual = this.tablero.buscarCasillaPorFicha(ficha);
       if (!casillaActual) {
         return badRequest(
           `No se encontró la casilla actual para la ficha con id ${idFicha}`,
         );
       }
 
-      const idNuevaCasilla = casillaActual.calcularNuevaCasilla(cantidad);
+      const idNuevaCasilla = this.tablero.calcularNuevaCasilla(
+        casillaActual.id,
+        cantidad,
+      );
       const nuevaCasilla = this.tablero.buscarCasillaPorId(idNuevaCasilla);
       if (!nuevaCasilla) {
         return badRequest(
@@ -288,17 +292,20 @@ export class PartidaModel {
         );
       }
 
-      if (nuevaCasilla.estaOcupada()) {
-        if (nuevaCasilla.tipo === 'CENTRAL') {
-          // Eliminar ficha ocupante
-          const { ocupantes } = this.tablero.buscarCasillaPorId(
-            nuevaCasilla.id,
-          );
-          if (ocupantes) ocupantes.every((ficha) => (ficha.eliminada = true)); // Elimina la ficha
-        } else {
-          // Devolver la ficha a su posición original
-          this.tablero.devolverFicha(ficha, casillaActual, cantidad);
-        }
+      if (
+        nuevaCasilla.estaOtroJugador(ficha) &&
+        nuevaCasilla.tipo === 'CENTRAL'
+      ) {
+        // Eliminar ficha ocupante
+        const casilla = this.tablero.buscarCasillaPorId(nuevaCasilla.id);
+        casilla.eliminarFichasOcupantes();
+      } else if (
+        nuevaCasilla.estaOtroJugador(ficha) &&
+        nuevaCasilla.tipo !== 'CENTRAL'
+      ) {
+        return badRequest(
+          `Ficha con id ${idFicha} no se puede movel ala  a la casilla con id ${idNuevaCasilla} por que esta ocupada por otro jugador`,
+        );
       }
 
       // Pagar apuesta si es una casilla de triángulo
@@ -321,6 +328,39 @@ export class PartidaModel {
   // Método auxiliar para buscar jugador
   buscarJugadorPorId(idJugador: number): JugadorModel | undefined {
     return this.jugadores.find((j) => j.id === idJugador);
+  }
+
+  verificarGanador() {
+    return this.jugadores.find((jugador) => jugador.gano(this.tablero.meta));
+  }
+
+  siguienteTurno(): void {
+    // Filtrar jugadores conectados que aún no han perdido
+    const jugadoresActivos = this.jugadores.filter(
+      (jugador) => !jugador.haPerdido && !jugador.isDisconnect,
+    );
+
+    // Si no hay jugadores activos, la partida se detiene
+    if (jugadoresActivos.length === 0) {
+      console.log('No hay jugadores activos para continuar.');
+      return;
+    }
+
+    // Buscar el índice actual en la lista de jugadores activos
+    const indiceActual = jugadoresActivos.findIndex(
+      (jugador) => jugador.id === this.turnoActual,
+    );
+
+    // Determinar el índice del siguiente jugador activo
+    const siguienteIndice = (indiceActual + 1) % jugadoresActivos.length;
+    const siguienteJugador = jugadoresActivos[siguienteIndice];
+
+    // Actualizar el turno al siguiente jugador activo
+    this.turnoActual = siguienteJugador.id;
+
+    console.log(
+      `Turno del jugador ${siguienteJugador.nombre} con ID ${siguienteJugador.id}`,
+    );
   }
 
   getData(): Partida {

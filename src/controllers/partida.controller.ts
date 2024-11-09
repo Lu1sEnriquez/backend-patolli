@@ -243,6 +243,11 @@ export class PartidaController implements OnGatewayDisconnect {
     this.server.emit(SocketEvents.MOVER_FICHA_AUTOMATICO, response);
     console.log(response.message);
 
+    const ganadoresult = await this.partidaService.verificarGanador(
+      parsedDto.codigo,
+    );
+    this.server.emit(SocketEvents.GANADOR, ganadoresult);
+
     return response;
   }
 

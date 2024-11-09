@@ -28,68 +28,63 @@ export class JugadorModel {
     return this.fichas.find((f) => f.id === idFicha);
   }
 
-  getNextTurno(): FichaModel | undefined {
+  getNextTurno(meta: number, cantidad: number): FichaModel | undefined {
     // Filtramos las fichas que no están eliminadas
     const fichasActivas = this.fichas.filter((ficha) => !ficha.eliminada);
 
     // Si no hay fichas activas, no podemos continuar con el turno
     if (fichasActivas.length === 0) return undefined;
 
-    // Calculamos la siguiente ficha válida que puede avanzar
-    let nextIndex = this.turnoFicha + 1;
-    if (nextIndex >= fichasActivas.length) {
-      nextIndex = 0; // Reiniciamos el índice si llegamos al final
-    }
-
+    // Inicializamos el índice del siguiente turno
+    let nextIndex = (this.turnoFicha + 1) % fichasActivas.length;
     let fichaEnTurno = fichasActivas[nextIndex];
+    let intentos = 0; // Contador para prevenir el bucle infinito
 
-    // Avanzamos al siguiente turno si la ficha está eliminada
+    // Avanzamos al siguiente turno si la ficha está eliminada, no está en el tablero o ya alcanzó la meta
     while (
       fichaEnTurno &&
-      fichaEnTurno.eliminada &&
-      fichaEnTurno.casillasAvanzadas == 0
+      (fichaEnTurno.eliminada ||
+        !fichaEnTurno.dentroDelTablero() ||
+        fichaEnTurno.haAlcanzadoMeta(meta) ||
+        fichaEnTurno.casillasAvanzadas + cantidad >= meta)
     ) {
-      nextIndex = (nextIndex + 1) % fichasActivas.length; // Buscar la siguiente ficha activa
+      nextIndex = (nextIndex + 1) % fichasActivas.length;
       fichaEnTurno = fichasActivas[nextIndex];
+
+      // Incrementamos el contador y verificamos si hemos intentado todas las fichas
+      intentos++;
+      if (intentos >= fichasActivas.length) {
+        // Si hemos recorrido todas las fichas sin encontrar una válida, salimos del bucle
+        return undefined;
+      }
     }
 
-    // Actualizamos el turno y retornamos la ficha que puede avanzar
+    // Actualizamos el turno a la ficha válida encontrada
     this.turnoFicha = fichaEnTurno ? fichaEnTurno.id : this.turnoFicha;
     return fichaEnTurno;
   }
-  getProximaFicha(cantidad: number, meta: number): FichaModel | undefined {
-    // Si no hay ninguna ficha ingresada, retornamos la primera ficha que debe entrar (solo si la cantidad es 1)
-    const fichaIngresada = this.fichas.find((ficha) => ficha.posicion !== null);
 
-    // Si ninguna ficha ha ingresado al tablero, la primera ficha entra (solo si el dado es 1)
-    if (!fichaIngresada) {
-      if (cantidad === 1) {
-        return this.fichas[0]; // La primera ficha entra al tablero
-      } else {
-        return undefined; // Si no es 1, no avanza ninguna ficha
-      }
+  getProximaFicha(cantidad: number, meta: number): FichaModel | undefined {
+    // buscamos la más cercana a la meta.
+    const fichaCercaDeMeta = this.fichas.find((ficha) =>
+      ficha.fichaCercaDeMeta(meta),
+    );
+
+    // Si la cantidad es 1 y alguna ficha no ha ingresado al tablero, retornamos la primera ficha no ingresada.
+    if (cantidad === 1 && fichaCercaDeMeta) {
+      return fichaCercaDeMeta; // Retorna la ficha más cercana a la meta
     }
 
-    // Si ya hay fichas en el tablero, buscamos la ficha más cercana a la meta
-    if (cantidad === 1) {
-      const fichaCercaDeMeta = this.fichas.find(
-        (ficha) => ficha.casillasAvanzadas === meta - 1 && !ficha.eliminada,
-      );
-      if (fichaCercaDeMeta) {
-        return fichaCercaDeMeta; // Avanzamos la ficha cerca de la meta
-      }
+    const fichaNoIngresada = this.fichas.find(
+      (ficha) => !ficha.dentroDelTablero(),
+    );
 
-      // // Si no hay ninguna ficha cerca de la meta, avanzamos la que está en la primera casilla
-      // const fichaEnPrimeraCasilla = this.fichas.find(
-      //   (ficha) => ficha.casillasAvanzadas === 1,
-      // );
-      // if (fichaEnPrimeraCasilla) {
-      //   return fichaEnPrimeraCasilla; // Avanzamos la ficha en la primera casilla
-      // }
+    if (cantidad === 1 && fichaNoIngresada) {
+      return fichaNoIngresada; // Retorna la primera ficha no ingresada
     }
 
     // Si no se cumple la condición de 1, devolvemos la siguiente ficha en el turno
-    return this.getNextTurno();
+    return this.getNextTurno(meta, cantidad);
   }
 
   public crearFichas(fichasTotales: number) {
@@ -113,6 +108,10 @@ export class JugadorModel {
     }
 
     return this.getData();
+  }
+
+  gano(meta: number): boolean {
+    return this.fichas.every((ficha) => ficha.haAlcanzadoMeta(meta));
   }
   getData(): Jugador {
     return {

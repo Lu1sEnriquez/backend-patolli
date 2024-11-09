@@ -45,6 +45,7 @@ type Ficha {
 type Tablero {
   tableroSize Int // Número de casillas por aspa @map("tableroSize")
   casillas    Casilla[] // Lista de casillas en el tablero
+  meta        Int
 }
 
 type Casilla {
@@ -52,7 +53,7 @@ type Casilla {
   tipo        CasillaTypeEnum // Tipo de la casilla
   orientacion OrientacionCasilla // Orientación de la casilla
   posicion    Coordenadas // Coordenadas en el tablero
-  ocupantes    Ficha[] //
+  ocupantes   Ficha[] //
 }
 
 // Tipos embebidos

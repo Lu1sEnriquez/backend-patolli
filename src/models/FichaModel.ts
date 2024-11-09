@@ -19,6 +19,14 @@ export class FichaModel {
     this.casillasAvanzadas += cantidad;
   }
 
+  dentroDelTablero(): boolean {
+    return this.casillasAvanzadas > 0;
+  }
+
+  fichaCercaDeMeta(meta: number): boolean {
+    return this.casillasAvanzadas === meta - 1 && !this.eliminada;
+  }
+
   haAlcanzadoMeta(meta: number): boolean {
     return this.casillasAvanzadas >= meta;
   }

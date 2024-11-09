@@ -3,15 +3,17 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { ObjectId } from 'mongodb';
 import {
+  badIntent,
   badRequest,
   created,
   internalServerError,
+  ok,
   SocketResponse,
 } from 'src/interface/socket-response';
 import { JugadorModel } from '../models/JugadorModel';
 import { PartidaModel } from '../models/PartidaModel';
 import { TableroModel } from '../models/TableroModel';
-import { estadoEnum, Partida } from '@prisma/client';
+import { estadoEnum, Jugador, Partida } from '@prisma/client';
 import { CreatePartidaDto } from '../dto/partida.dto';
 import { JugadorCreateDto } from '../dto/jugador.dto';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
@@ -40,6 +42,7 @@ export class PartidaService {
       const tablero = new TableroModel({
         casillas: [],
         tableroSize: data.tableroSize,
+        meta: 0, // valor por defecto
       });
       tablero.generarCasillas();
       // console.log(tablero.getData());
@@ -335,8 +338,10 @@ export class PartidaService {
     if (result.success) {
       return created(partidaGuardada, 'Se movio la ficha Exitosamente');
     }
-    // si la clase devuelve un error al agregar un usuario lo retornamos al cliente
-    return result;
+    // si todo a salido bien regresamos la partida actualizada
+    if (result) {
+      return badIntent(partidaGuardada, result.message);
+    }
   }
 
   async iniciarPartida(codigoPartida: string) {
@@ -368,5 +373,28 @@ export class PartidaService {
     }
     // si la clase devuelve un error al agregar un usuario lo retornamos al cliente
     return result;
+  }
+
+  async verificarGanador(
+    codigoPartida: string,
+  ): Promise<SocketResponse<Jugador | null>> {
+    const partida = await this.prisma.partida.findUnique({
+      where: { codigo: codigoPartida },
+    });
+
+    if (!partida) {
+      return badRequest(
+        `No se encontró la partida con código ${codigoPartida}`,
+      );
+    }
+    const partidaActualizada = new PartidaModel(partida);
+
+    const ganador = partidaActualizada.verificarGanador();
+    // si todo a salido bien regresamos la partida actualizada
+    if (ganador) {
+      return ok(ganador.getData(), 'hay ganador');
+    }
+    // si la clase devuelve un error al agregar un usuario lo retornamos al cliente
+    return badRequest('no hay ganador');
   }
 }

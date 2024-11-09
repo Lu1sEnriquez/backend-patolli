@@ -11,4 +11,7 @@ export class TableroCreateDto {
   @ValidateNested({ each: true })
   @Type(() => CasillaCreateDto)
   casillas: CasillaCreateDto[];
+
+  @IsInt()
+  meta: number;
 }

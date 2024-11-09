@@ -22,14 +22,16 @@ export class CasillaModel {
     this.tipo = casillaData.tipo;
   }
 
-  // Método para calcular la nueva casilla sumando la cantidad
-  calcularNuevaCasilla(cantidad: number): number {
-    return this.id + cantidad;
+  // Verificar si la casilla está ocupada
+  estaOtroJugador(ficha: FichaModel): boolean {
+    return (
+      this.ocupantes.length > 0 &&
+      !this.ocupantes.every((f) => f.color == ficha.color)
+    );
   }
 
-  // Verificar si la casilla está ocupada
-  estaOcupada(): boolean {
-    return this.ocupantes !== null;
+  eliminarFichasOcupantes() {
+    this.ocupantes = [];
   }
 
   getData(): Casilla {

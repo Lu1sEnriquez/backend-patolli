@@ -25,6 +25,7 @@ export enum SocketEvents {
   INGRESAR_FICHA = 'ingresar_ficha',
   MOVER_FICHA_PAGANDO = 'mover_ficha_pagando',
   MOVER_FICHA_AUTOMATICO = 'mover_ficha_automatico',
+  GANADOR = 'ganador',
 }
 
 // Función para 200 OK
@@ -50,6 +51,19 @@ export function created<T>(
     message,
     data,
     code: 201,
+  };
+}
+
+// Función para 201 Created
+export function badIntent<T>(
+  data: T,
+  message: string = 'intento fallido',
+): SocketResponse<T> {
+  return {
+    success: false,
+    message,
+    data,
+    code: 401,
   };
 }
 

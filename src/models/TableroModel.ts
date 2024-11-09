@@ -7,12 +7,18 @@ export class TableroModel {
   public casillas: CasillaModel[];
   public tableroSize: number;
   public meta: number;
+
   constructor(tablero: Tablero) {
     this.tableroSize = tablero?.tableroSize || 0;
     this.casillas =
       tablero?.casillas?.map((casilla) => new CasillaModel(casilla)) || [];
+    this.meta = this.casillas.length - (this.tableroSize - 2); // la posicion correcta
   }
 
+  // Método para calcular la nueva casilla sumando la cantidad
+  calcularNuevaCasilla(posisionActual: number, cantidad: number): number {
+    return (posisionActual + cantidad) % this.casillas.length;
+  }
   // Genera las posiciones de las casillas que corresponden a la cruz
   // Genera las posiciones de las casillas que corresponden a la cruz
   private generarPuntosCruz(size: number): { X: number; Y: number }[] {
@@ -95,6 +101,8 @@ export class TableroModel {
     });
 
     this.casillas = casillas;
+
+    this.meta = casillas.length;
     return casillas;
   }
 
@@ -260,8 +268,11 @@ export class TableroModel {
   }
   // GAME
   // Buscar una casilla por la ficha
-  buscarCasillaPorFicha(idFicha: number): CasillaModel | undefined {
-    return this.casillas.find((c) => c.ocupantes.find((f) => f.id == idFicha));
+  buscarCasillaPorFicha(ficha: FichaModel): CasillaModel | undefined {
+    return this.casillas.find((c) =>
+      // se realiza la busqueda por id  y color ya que no se cuenta con la id del jugador
+      c.ocupantes.some((f) => f.id == ficha.id && f.color == ficha.color),
+    );
   }
 
   // Buscar una casilla por su ID
@@ -283,12 +294,15 @@ export class TableroModel {
       (f) => f.id !== ficha.id,
     );
 
-    // Agregar la ficha a la nueva casilla
-    nuevaCasilla.ocupantes.push(ficha);
-
     // Actualizar la posición de la ficha
     ficha.posicion = nuevaCasilla.posicion;
-    ficha.casillasAvanzadas += cantidad;
+    ficha.casillasAvanzadas =
+      ficha.casillasAvanzadas + cantidad > this.meta
+        ? this.meta
+        : ficha.casillasAvanzadas + cantidad;
+
+    // Agregar la ficha a la nueva casilla
+    nuevaCasilla.ocupantes.push(ficha);
 
     // Actualizar las casillas en el tablero
     this.casillas.splice(casillaActual.id, 1, casillaActual);
@@ -363,6 +377,7 @@ export class TableroModel {
     return this.meta;
   }
 
+  // se refiere ala casilla dentro del tablero
   obtenerMetaJugador(idJugador: number): number {
     switch (idJugador) {
       case 1:
@@ -382,6 +397,7 @@ export class TableroModel {
     return {
       tableroSize: this.tableroSize,
       casillas: this.casillas?.map((casilla) => casilla.getData()),
+      meta: this.meta,
     };
   }
 }
