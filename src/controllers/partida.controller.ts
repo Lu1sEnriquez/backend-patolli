@@ -18,7 +18,7 @@ import { CreatePartidaDto } from '../dto/partida.dto';
 
 @WebSocketGateway({
   cors: {
-    origin: 'http://localhost:3000', // Permitir solicitudes CORS desde este origen
+    origin: '*', // Permitir todos los encabezados // Permitir solicitudes CORS desde este origen
     methods: ['GET', 'POST'], // Métodos permitidos
     credentials: true, // Permitir credenciales
   },
@@ -240,6 +240,7 @@ export class PartidaController implements OnGatewayDisconnect {
       parsedDto.cantidad,
     );
 
+    // se emite el resultado de mover la ficha
     this.server.emit(SocketEvents.MOVER_FICHA_AUTOMATICO, response);
     console.log(response.message);
 
@@ -247,6 +248,12 @@ export class PartidaController implements OnGatewayDisconnect {
       parsedDto.codigo,
     );
     this.server.emit(SocketEvents.GANADOR, ganadoresult);
+
+    const perdedores = await this.partidaService.verificarPerdedores(
+      parsedDto.codigo,
+    );
+
+    this.server.emit(SocketEvents.PERDEDORES, perdedores);
 
     return response;
   }
@@ -269,6 +276,29 @@ export class PartidaController implements OnGatewayDisconnect {
     this.server.emit(SocketEvents.INICIAR_PARTIDA, response);
     console.log(response.message);
 
+    return response;
+  }
+
+  // terminar Partida
+  @SubscribeMessage(SocketEvents.TERMINAR_PARTIDA)
+  async terminarPartida(@MessageBody() data: string) {
+    let parsedDto: {
+      codigo: string;
+    };
+
+    try {
+      parsedDto = JSON.parse(data);
+    } catch (error) {
+      console.log(error);
+      return badRequest('Invalid JSON format');
+    }
+
+    const response = await this.partidaService.terminarPartida(
+      parsedDto.codigo,
+    );
+
+    this.server.emit(SocketEvents.TERMINAR_PARTIDA, response);
+    console.log(response.message);
     return response;
   }
 }
