@@ -309,7 +309,6 @@ export class PartidaService {
   async moverFichaAutomaticoEnPartida(
     codigoPartida: string,
     idJugador: number,
-
     cantidad: number,
   ): Promise<SocketResponse<Partida | null>> {
     // Buscar la partida en la base de datos
@@ -396,5 +395,46 @@ export class PartidaService {
     }
     // si la clase devuelve un error al agregar un usuario lo retornamos al cliente
     return badRequest('no hay ganador');
+  }
+
+  async verificarPerdedores(
+    codigoPartida: string,
+  ): Promise<SocketResponse<Jugador[] | null>> {
+    const partida = await this.prisma.partida.findUnique({
+      where: { codigo: codigoPartida },
+    });
+
+    if (!partida) {
+      return badRequest(
+        `No se encontró la partida con código ${codigoPartida}`,
+      );
+    }
+    const partidaActualizada = new PartidaModel(partida);
+
+    const perdedores = partidaActualizada
+      .verificarPerdedores()
+      .map((j) => j.getData());
+    // si todo a salido bien regresamos la partida actualizada
+    if (perdedores) {
+      return badIntent(perdedores, 'hay ganador');
+    }
+    // si la clase devuelve un error al agregar un usuario lo retornamos al cliente
+    return ok(perdedores, 'no hay perdedores');
+  }
+
+  async terminarPartida(
+    codigoPartida: string,
+  ): Promise<SocketResponse<Partida | null>> {
+    const partidaDeleted = await this.prisma.partida.delete({
+      where: { codigo: codigoPartida },
+    });
+
+    if (!partidaDeleted) {
+      return badRequest(
+        `No se encontró la partida con código ${codigoPartida}`,
+      );
+    }
+
+    return ok(partidaDeleted, 'partida eliminada');
   }
 }
