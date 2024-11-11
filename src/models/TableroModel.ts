@@ -312,7 +312,11 @@ export class TableroModel {
   }
 
   // Ingresar una ficha en la casilla de inicio de un jugador
-  ingresarFicha(ficha: FichaModel, idJugador: number): FichaModel {
+  ingresarFicha(
+    ficha: FichaModel,
+    idJugador: number,
+    // cantidad: number,
+  ): FichaModel {
     const casillaIdInicio = this.obtenerInicioJugador(idJugador);
     const casillaInicio = this.casillas.find(
       (casilla) => casilla.id === casillaIdInicio,
