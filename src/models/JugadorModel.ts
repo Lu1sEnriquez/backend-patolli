@@ -104,7 +104,7 @@ export class JugadorModel {
     this.fondoApuesta -= monto;
 
     if (this.fondoApuesta <= 0) {
-      this.haPerdido = false;
+      this.haPerdido = true;
     }
 
     return this.getData();
