@@ -1,6 +1,7 @@
 import { JugadorModel } from './JugadorModel';
 import { TableroModel } from './TableroModel';
 import {
+  badIntent,
   badRequest,
   created,
   internalServerError,
@@ -43,6 +44,10 @@ export class PartidaModel {
   agregarJugador(
     jugadorData: Partial<JugadorCreateDto>,
   ): SocketResponse<Partida | null> {
+    if (this.estado !== estadoEnum.EN_ESPERA) {
+      return badRequest('esta partida ya empezo');
+    }
+
     try {
       // Verificar si el número de jugadores ya ha alcanzado el límite
       if (this?.jugadores?.length >= 4) {
@@ -197,19 +202,27 @@ export class PartidaModel {
     return ok(this.getData(), 'inicio Partida correctamente');
   }
 
-  moverFichaPagando(idJugador: number, idFicha: number, cantidad: number) {
+  moverFichaPagando(
+    idJugador: number,
+    idFicha: number,
+    cantidad: number,
+  ): SocketResponse<Partida | null> {
+    this.siguienteTurno();
     const jugador = this.buscarJugadorPorId(idJugador);
-    if (!jugador)
+    if (!jugador) {
       return badRequest(`No se encontró al jugador con id ${idJugador}`);
+    }
 
     // Verificar si el jugador tiene fichas para mover o ingresar
-    if (jugador.fichas.every((ficha) => ficha.casillasAvanzadas > 0)) {
-      return this.moverFicha(idJugador, idFicha, cantidad);
-    } else if (cantidad === 1) {
-      // Paga apuesta si el dado no permite movimiento
+    const puedeMover = jugador.fichas.some(
+      (ficha) => ficha.casillasAvanzadas > 0,
+    );
+    if (!puedeMover && cantidad === 1) {
+      // Paga apuesta si no puede mover ninguna ficha
       jugador.pagarApuesta(this.montoApuesta);
     }
 
+    // Llamar al método moverFicha para realizar el movimiento
     return this.moverFicha(idJugador, idFicha, cantidad);
   }
 
@@ -225,13 +238,16 @@ export class PartidaModel {
 
     if (cantidad == 0) {
       jugador.pagarApuesta(this.montoApuesta);
-      return ok(this.getData());
+      return badIntent(this.getData(), 'no se movio ninguna ficha');
     }
 
     const ficha = jugador.getProximaFicha(cantidad, this.tablero.meta);
     console.log(ficha);
 
-    if (!ficha) return badRequest(`No hay fichas disponibles para mover`);
+    if (!ficha) {
+      jugador.pagarApuesta(this.montoApuesta);
+      return badIntent(this.getData(), 'pago apuesta');
+    }
 
     // Mover la ficha usando la cantidad tirada
     return this.moverFicha(idJugador, ficha.id, cantidad);
@@ -303,19 +319,34 @@ export class PartidaModel {
         nuevaCasilla.estaOtroJugador(ficha) &&
         nuevaCasilla.tipo !== 'CENTRAL'
       ) {
-        return badRequest(
-          `Ficha con id ${idFicha} no se puede movel ala  a la casilla con id ${idNuevaCasilla} por que esta ocupada por otro jugador`,
-        );
+        return badRequest(`casilla ocupada por otro jugador`);
       }
 
       // Pagar apuesta si es una casilla de triángulo
       if (nuevaCasilla.tipo === 'TRIANGULO') {
         jugador.pagarApuesta(this.montoApuesta * 2); // Pago doble
+        this.tablero.moverFicha(ficha, casillaActual, nuevaCasilla, cantidad);
+        return badIntent(
+          this.getData(),
+          `casilla de triangulo paga dable Apuesta`,
+        );
       }
 
       // Mover la ficha y actualizar casillas
-      this.tablero.moverFicha(ficha, casillaActual, nuevaCasilla, cantidad);
+      const fichaMovida = this.tablero.moverFicha(
+        ficha,
+        casillaActual,
+        nuevaCasilla,
+        cantidad,
+      );
 
+      if (fichaMovida.haAlcanzadoMeta(this.tablero.meta)) {
+        this.jugadores.forEach((jugador) =>
+          jugador.pagarApuesta(this.montoApuesta),
+        );
+
+        return badIntent(this.getData(), 'todos pagan apuesta');
+      }
       return created(
         this.getData(),
         `Ficha con id ${idFicha} movida con éxito a la casilla con id ${idNuevaCasilla}`,
@@ -331,13 +362,31 @@ export class PartidaModel {
   }
 
   verificarGanador() {
-    return this.jugadores.find((jugador) => jugador.gano(this.tablero.meta));
+    // si hay un jugador que metio todas sus fichas
+    let ganador = this.jugadores.find((jugador) =>
+      jugador.gano(this.tablero.meta),
+    );
+    console.log(ganador);
+
+    if (ganador) return ganador;
+
+    // si todos los jugadores excepto 1 gana ese jugador
+    const jugadoresSinPerder = this.jugadores.filter(
+      (jugador) => !jugador.haPerdido,
+    );
+
+    if (jugadoresSinPerder.length == 1) {
+      ganador = jugadoresSinPerder[0];
+      console.log(ganador);
+
+      return ganador;
+    }
   }
 
   siguienteTurno(): void {
     // Filtrar jugadores conectados que aún no han perdido
     const jugadoresActivos = this.jugadores.filter(
-      (jugador) => !jugador.haPerdido && !jugador.isDisconnect,
+      (jugador) => !jugador.haPerdido && !jugador.haPerdido,
     );
 
     // Si no hay jugadores activos, la partida se detiene
@@ -363,6 +412,9 @@ export class PartidaModel {
     );
   }
 
+  verificarPerdedores() {
+    return this.jugadores.filter((jugador) => jugador.haPerdido);
+  }
   getData(): Partida {
     return {
       id: this.id,
