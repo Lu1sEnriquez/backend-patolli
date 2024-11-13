@@ -5,6 +5,9 @@ import {
   OrientacionCasilla,
 } from '@prisma/client';
 import { FichaModel } from './FichaModel';
+import { ICasillaState } from 'src/interface/ICasillaState';
+import { ICasillaStateFactory } from 'src/interface/ICasillaStateFactory';
+import { CasillaStateFactory } from './factory/CasillaStateFactory';
 
 export class CasillaModel {
   public id: number;
@@ -12,6 +15,12 @@ export class CasillaModel {
   public orientacion: OrientacionCasilla;
   public posicion: Coordenadas;
   public tipo?: CasillaTypeEnum;
+  private state: ICasillaState;
+  private meta?: number; // Nueva propiedad
+
+  // Utilizamos el Singleton Factory
+  private static stateFactory: ICasillaStateFactory =
+    CasillaStateFactory.getInstance();
 
   constructor(casillaData: Casilla) {
     this.id = casillaData.id;
@@ -19,7 +28,9 @@ export class CasillaModel {
       casillaData.ocupantes?.map((ficha) => new FichaModel(ficha)) || [];
     this.orientacion = casillaData.orientacion;
     this.posicion = casillaData.posicion;
-    this.tipo = casillaData.tipo;
+    // Usamos el factory para crear el estado apropiado
+    this.state = CasillaModel.stateFactory.createState(casillaData.tipo);
+    this.meta = casillaData.meta || 0; // Inicializar meta
   }
 
   // Verificar si la casilla está ocupada
@@ -43,7 +54,30 @@ export class CasillaModel {
         X: this.posicion.X,
         Y: this.posicion.Y,
       },
-      tipo: this.tipo,
+      tipo: this.getTipo(),
+      meta: this.meta,
     };
+  }
+
+  // Método para manejar el movimiento de fichas usando el estado
+  puedeRecibirFicha(ficha: FichaModel): boolean {
+    return this.state.handleFichaMovement(this, ficha);
+  }
+
+  // Métodos para el manejo de entrada y salida de fichas
+  entrarFicha(ficha: FichaModel): void {
+    this.state.onEnter(this, ficha);
+  }
+
+  salirFicha(ficha: FichaModel): void {
+    this.state.onExit(this, ficha);
+  }
+
+  getTipo(): CasillaTypeEnum {
+    return this.state.getStateType();
+  }
+
+  getMeta(): number {
+    return this.meta;
   }
 }

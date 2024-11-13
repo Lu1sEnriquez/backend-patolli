@@ -40,6 +40,8 @@ type Ficha {
   posicion          Coordenadas? // Coordenadas en el tablero
   eliminada         Boolean?     @default(false) // Si la ficha está eliminada
   casillasAvanzadas Int
+  haLlegadoAMeta    Boolean
+  regresarAInicio   Boolean
 }
 
 type Tablero {
@@ -54,6 +56,7 @@ type Casilla {
   orientacion OrientacionCasilla // Orientación de la casilla
   posicion    Coordenadas // Coordenadas en el tablero
   ocupantes   Ficha[] //
+  meta        Int? // Nueva propiedad opcional
 }
 
 // Tipos embebidos

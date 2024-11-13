@@ -6,6 +6,8 @@ export class FichaModel {
   public eliminada: boolean = false;
   public posicion: Coordenadas | null;
   public casillasAvanzadas: number;
+  public haLlegadoAMeta: boolean;
+  public regresarAInicio: boolean;
 
   constructor(data: Ficha) {
     this.id = data.id;
@@ -13,6 +15,9 @@ export class FichaModel {
     this.eliminada = data.eliminada;
     this.posicion = data.posicion;
     this.casillasAvanzadas = data.casillasAvanzadas;
+
+    this.haLlegadoAMeta = data.haLlegadoAMeta || false;
+    this.regresarAInicio = data.regresarAInicio || false;
   }
 
   avanzar(cantidad: number): void {
@@ -31,13 +36,14 @@ export class FichaModel {
     return this.casillasAvanzadas >= meta;
   }
 
-  getData(): Ficha {
+  getData(): any {
     return {
       id: this.id,
       color: this.color,
-      eliminada: this.eliminada,
       posicion: this.posicion,
       casillasAvanzadas: this.casillasAvanzadas,
+      haLlegadoAMeta: this.haLlegadoAMeta,
+      regresarAInicio: this.regresarAInicio,
     };
   }
 }

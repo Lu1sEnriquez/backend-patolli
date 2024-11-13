@@ -95,6 +95,7 @@ export class TableroModel {
         orientacion,
         posicion: { X: punto.X, Y: punto.Y },
         tipo,
+        meta: 0,
       });
 
       casillas.push(casilla);
@@ -289,26 +290,19 @@ export class TableroModel {
     nuevaCasilla: CasillaModel,
     cantidad: number,
   ): FichaModel {
-    // Eliminar la ficha de la casilla actual
-    casillaActual.ocupantes = casillaActual.ocupantes.filter(
-      (f) => f.id !== ficha.id,
-    );
+    if (nuevaCasilla.puedeRecibirFicha(ficha)) {
+      casillaActual.salirFicha(ficha);
+      nuevaCasilla.entrarFicha(ficha);
 
-    // Actualizar la posición de la ficha
-    ficha.posicion = nuevaCasilla.posicion;
-    ficha.casillasAvanzadas =
-      ficha.casillasAvanzadas + cantidad > this.meta
-        ? this.meta
-        : ficha.casillasAvanzadas + cantidad;
+      ficha.posicion = nuevaCasilla.posicion;
+      ficha.casillasAvanzadas = Math.min(
+        ficha.casillasAvanzadas + cantidad,
+        this.meta,
+      );
 
-    // Agregar la ficha a la nueva casilla
-    nuevaCasilla.ocupantes.push(ficha);
-
-    // Actualizar las casillas en el tablero
-    this.casillas.splice(casillaActual.id, 1, casillaActual);
-    this.casillas.splice(nuevaCasilla.id, 1, nuevaCasilla);
-
-    return ficha;
+      return ficha;
+    }
+    throw new Error('Movimiento no válido');
   }
 
   // Ingresar una ficha en la casilla de inicio de un jugador

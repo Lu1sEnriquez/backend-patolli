@@ -16,4 +16,10 @@ export class FichaCreateDto implements Ficha {
 
   @IsOptional()
   casillasAvanzadas: number;
+
+  @IsBoolean()
+  haLlegadoAMeta: boolean;
+  
+  @IsBoolean()
+  regresarAInicio: boolean;
 }

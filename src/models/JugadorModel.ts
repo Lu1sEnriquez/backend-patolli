@@ -95,6 +95,8 @@ export class JugadorModel {
         eliminada: false,
         posicion: null,
         casillasAvanzadas: 0,
+        haLlegadoAMeta: false,
+        regresarAInicio: false,
       };
       return new FichaModel(ficha);
     });
