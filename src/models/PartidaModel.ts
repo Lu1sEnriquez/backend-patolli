@@ -212,6 +212,7 @@ export class PartidaModel {
     if (!jugador) {
       return badRequest(`No se encontró al jugador con id ${idJugador}`);
     }
+    jugador.pagarApuesta(this.montoApuesta);
 
     // Verificar si el jugador tiene fichas para mover o ingresar
     const puedeMover = jugador.fichas.some(
@@ -276,11 +277,21 @@ export class PartidaModel {
       );
     }
 
-    // Lógica para ingresar la ficha si el dado cae en 1
-    if (cantidad === 1 && !ficha.dentroDelTablero()) {
-      // Verifica si puede ingresar una nueva ficha
-      console.log(`ingresar ficha  ${ficha.id}`);
+    // Verificamos si ya hay fichas en el tablero
+    const hayFichasEnElTablero = jugador.fichas.some((ficha) =>
+      ficha.dentroDelTablero(),
+    );
 
+    // Si no hay fichas en el tablero, podemos ingresar con cualquier cantidad
+    if (!hayFichasEnElTablero && !ficha.dentroDelTablero()) {
+      console.log(`ingresar ficha ${ficha.id} con cantidad ${cantidad}`);
+      this.tablero.ingresarFicha(ficha, idJugador);
+      return created(
+        this.getData(),
+        `Ficha con id ${idFicha} introducida con éxito a la casilla de inicio`,
+      );
+    } else if (!ficha.dentroDelTablero() && cantidad === 1) {
+      console.log(`ingresar ficha ${ficha.id} con cantidad ${cantidad}`);
       this.tablero.ingresarFicha(ficha, idJugador);
       return created(
         this.getData(),

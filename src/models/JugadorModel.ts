@@ -74,12 +74,14 @@ export class JugadorModel {
     if (cantidad === 1 && fichaCercaDeMeta) {
       return fichaCercaDeMeta; // Retorna la ficha más cercana a la meta
     }
-
+    const hayFichasEnElTablero = this.fichas.some((ficha) =>
+      ficha.dentroDelTablero(),
+    );
     const fichaNoIngresada = this.fichas.find(
       (ficha) => !ficha.dentroDelTablero(),
     );
 
-    if (cantidad === 1 && fichaNoIngresada) {
+    if ((!hayFichasEnElTablero || cantidad === 1) && fichaNoIngresada) {
       return fichaNoIngresada; // Retorna la primera ficha no ingresada
     }
 
