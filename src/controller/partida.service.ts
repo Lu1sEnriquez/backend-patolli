@@ -39,12 +39,7 @@ export class PartidaService {
 
       jugadorUno.crearFichas(data.fichasTotales);
 
-      const tablero = new TableroModel({
-        casillas: [],
-        tableroSize: data.tableroSize,
-        meta: 0, // valor por defecto
-      });
-      tablero.generarCasillas();
+      const tablero = TableroModel.crearTablero(data.tableroSize);
       // console.log(tablero.getData());
 
       const turnoActual = 0;
