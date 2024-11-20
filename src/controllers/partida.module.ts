@@ -1,10 +1,11 @@
 import { Module } from '@nestjs/common';
 import { PartidaService } from './partida.service';
-import { PartidaController } from './partida.controller';
+import { ObserverManager } from './observerManager';
 import { PrismaModule } from 'src/prisma/prisma.module';
+import { PartidaRepository } from './partida.repository';
 
 @Module({
-  providers: [PartidaController, PartidaService],
+  providers: [ObserverManager, PartidaService, PartidaRepository],
   imports: [PrismaModule],
 })
 export class PartidaModule {}

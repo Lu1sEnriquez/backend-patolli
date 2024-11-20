@@ -26,9 +26,9 @@ import { CreatePartidaDto } from '../dto/partida.dto';
 
 // partida controller se encarga de utilizar
 //  el service y guardar la informacion
-export class PartidaController implements OnGatewayDisconnect {
+export class ObserverManager implements OnGatewayDisconnect {
   @WebSocketServer()
-  server: Server; // Servidor WebSocket
+  observer: Server; // Servidor WebSocket
 
   // Almacenar la relación entre el socket y el jugador.
   private jugadoresConectados: Map<string, string> = new Map(); // socket.id -> jugador.id
@@ -54,7 +54,7 @@ export class PartidaController implements OnGatewayDisconnect {
     console.log('response');
     console.log(response);
 
-    this.server.emit(SocketEvents.PARTIDA_CREADA, response);
+    this.observer.emit(SocketEvents.PARTIDA_CREADA, response);
     return response;
   }
 
@@ -82,7 +82,7 @@ export class PartidaController implements OnGatewayDisconnect {
         nombre: parsedDto.nombre,
       });
 
-    this.server.emit(SocketEvents.JUGADOR_UNIDO, response);
+    this.observer.emit(SocketEvents.JUGADOR_UNIDO, response);
     return response;
   }
 
@@ -103,7 +103,7 @@ export class PartidaController implements OnGatewayDisconnect {
         id: parsedDto.id,
       });
 
-    this.server.emit(SocketEvents.ELIMINAR_JUGADOR, response);
+    this.observer.emit(SocketEvents.ELIMINAR_JUGADOR, response);
     return response;
   }
 
@@ -129,7 +129,7 @@ export class PartidaController implements OnGatewayDisconnect {
         parsedDto.nombre,
       );
 
-    this.server.emit(SocketEvents.PAGAR_APUESTA, response);
+    this.observer.emit(SocketEvents.PAGAR_APUESTA, response);
     return response;
   }
 
@@ -149,7 +149,7 @@ export class PartidaController implements OnGatewayDisconnect {
           jugadorNombre,
         );
 
-      this.server.emit(SocketEvents.JUGADOR_DESCONECTADO, response);
+      this.observer.emit(SocketEvents.JUGADOR_DESCONECTADO, response);
     }
   }
 
@@ -182,7 +182,7 @@ export class PartidaController implements OnGatewayDisconnect {
       parsedDto.cantidad,
     );
 
-    this.server.emit(SocketEvents.INGRESAR_FICHA, response);
+    this.observer.emit(SocketEvents.INGRESAR_FICHA, response);
     return response;
   }
 
@@ -212,8 +212,20 @@ export class PartidaController implements OnGatewayDisconnect {
       parsedDto.cantidad,
     );
 
-    this.server.emit(SocketEvents.MOVER_FICHA_PAGANDO, response);
+    // se emite el resultado de mover la ficha
+    this.observer.emit(SocketEvents.MOVER_FICHA_PAGANDO, response);
     console.log(response.message);
+
+    const ganadoresult = await this.partidaService.verificarGanador(
+      parsedDto.codigo,
+    );
+    this.observer.emit(SocketEvents.GANADOR, ganadoresult);
+
+    const perdedores = await this.partidaService.verificarPerdedores(
+      parsedDto.codigo,
+    );
+
+    this.observer.emit(SocketEvents.PERDEDORES, perdedores);
 
     return response;
   }
@@ -241,19 +253,19 @@ export class PartidaController implements OnGatewayDisconnect {
     );
 
     // se emite el resultado de mover la ficha
-    this.server.emit(SocketEvents.MOVER_FICHA_AUTOMATICO, response);
+    this.observer.emit(SocketEvents.MOVER_FICHA_AUTOMATICO, response);
     console.log(response.message);
 
     const ganadoresult = await this.partidaService.verificarGanador(
       parsedDto.codigo,
     );
-    this.server.emit(SocketEvents.GANADOR, ganadoresult);
+    this.observer.emit(SocketEvents.GANADOR, ganadoresult);
 
     const perdedores = await this.partidaService.verificarPerdedores(
       parsedDto.codigo,
     );
 
-    this.server.emit(SocketEvents.PERDEDORES, perdedores);
+    this.observer.emit(SocketEvents.PERDEDORES, perdedores);
 
     return response;
   }
@@ -273,7 +285,7 @@ export class PartidaController implements OnGatewayDisconnect {
     }
 
     const response = await this.partidaService.iniciarPartida(parsedDto.codigo);
-    this.server.emit(SocketEvents.INICIAR_PARTIDA, response);
+    this.observer.emit(SocketEvents.INICIAR_PARTIDA, response);
     console.log(response.message);
 
     return response;
@@ -297,7 +309,7 @@ export class PartidaController implements OnGatewayDisconnect {
       parsedDto.codigo,
     );
 
-    this.server.emit(SocketEvents.TERMINAR_PARTIDA, response);
+    this.observer.emit(SocketEvents.TERMINAR_PARTIDA, response);
     console.log(response.message);
     return response;
   }

@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 
-import { PrismaService } from 'src/prisma/prisma.service';
 import { ObjectId } from 'mongodb';
 import {
   badIntent,
@@ -17,10 +16,11 @@ import { estadoEnum, Jugador, Partida } from '@prisma/client';
 import { CreatePartidaDto } from '../dto/partida.dto';
 import { JugadorCreateDto } from '../dto/jugador.dto';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
+import { PartidaRepository } from './partida.repository';
 
 @Injectable()
 export class PartidaService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly partidaRepo: PartidaRepository) {}
 
   async crearPartida(
     data: CreatePartidaDto,
@@ -66,9 +66,7 @@ export class PartidaService {
 
       // console.log(nuevaPartida.getData());
 
-      const partida = await this.prisma.partida.create({
-        data: nuevaPartida.getData(),
-      });
+      const partida = await this.partidaRepo.create(nuevaPartida.getData());
       return created(partida, 'Partida creada exitosamente');
     } catch (error) {
       console.error('Error al crear la partida:');
@@ -94,10 +92,7 @@ export class PartidaService {
   ): Promise<SocketResponse<Partida | null>> {
     try {
       // Buscar la partida en la base de datos
-      const partida = await this.prisma.partida.findUnique({
-        where: { codigo: codigo },
-      });
-
+      const partida = await this.partidaRepo.findByCodigo(codigo);
       if (!partida) {
         return badRequest('Partida no encontrada');
       }
@@ -112,10 +107,7 @@ export class PartidaService {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { id, ...data } = partidaActualizada.getData();
 
-      const partidaGuardada = await this.prisma.partida.update({
-        where: { codigo: codigo },
-        data: data,
-      });
+      const partidaGuardada = await this.partidaRepo.update(codigo, data);
 
       // si todo a salido bien regresamos la partida actualizada
       if (result.success) {
@@ -132,10 +124,7 @@ export class PartidaService {
   async salirJugador(codigo: string, jugadorDto: Partial<JugadorCreateDto>) {
     try {
       // Buscar la partida en la base de datos
-      const partida = await this.prisma.partida.findUnique({
-        where: { codigo: codigo },
-      });
-
+      const partida = await this.partidaRepo.findByCodigo(codigo);
       if (!partida) {
         return badRequest('Partida no encontrada');
       }
@@ -149,10 +138,7 @@ export class PartidaService {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { id, ...data } = partidaActualizada.getData();
 
-      const partidaGuardada = await this.prisma.partida.update({
-        where: { codigo: codigo },
-        data: data,
-      });
+      const partidaGuardada = await this.partidaRepo.update(codigo, data);
 
       // si todo a salido bien regresamos la partida actualizada
       if (result.success) {
@@ -167,14 +153,12 @@ export class PartidaService {
   }
 
   async suspenderJugador(
-    codigoPartida: string,
+    codigo: string,
     jugadorNombre: string,
   ): Promise<SocketResponse<Partida | null>> {
     try {
       // Buscar la partida en la que está el jugador por su nombre
-      const partida = await this.prisma.partida.findUnique({
-        where: { codigo: codigoPartida },
-      });
+      const partida = await this.partidaRepo.findByCodigo(codigo);
 
       if (!partida) {
         return badRequest('Partida no encontrada');
@@ -189,10 +173,7 @@ export class PartidaService {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { id, ...data } = partidaActualizada.getData();
 
-      const partidaGuardada = await this.prisma.partida.update({
-        where: { codigo: partida.codigo },
-        data: data,
-      });
+      const partidaGuardada = await this.partidaRepo.update(codigo, data);
 
       // si todo a salido bien regresamos la partida actualizada
       if (result.success) {
@@ -212,13 +193,11 @@ export class PartidaService {
   }
 
   async pagarApuesta(
-    codigoPartida: string,
+    codigo: string,
     nombreJugador: string,
   ): Promise<SocketResponse<Partida | null>> {
     try {
-      const partida = await this.prisma.partida.findUnique({
-        where: { codigo: codigoPartida },
-      });
+      const partida = await this.partidaRepo.findByCodigo(codigo);
 
       if (!partida) {
         return badRequest('Partida no encontrada');
@@ -233,10 +212,7 @@ export class PartidaService {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { id, ...data } = partidaActualizada.getData();
 
-      const partidaGuardada = await this.prisma.partida.update({
-        where: { codigo: partida.codigo },
-        data: data,
-      });
+      const partidaGuardada = await this.partidaRepo.update(codigo, data);
 
       // si todo a salido bien regresamos la partida actualizada
       if (result.success) {
@@ -266,20 +242,16 @@ export class PartidaService {
   }
   // Movimientos de juego
   async moverFichaPagandoEnPartida(
-    codigoPartida: string,
+    codigo: string,
     idJugador: number,
     idFicha: number,
     cantidad: number,
   ): Promise<SocketResponse<Partida | null>> {
     // Buscar la partida en la base de datos
-    const partida = await this.prisma.partida.findUnique({
-      where: { codigo: codigoPartida },
-    });
+    const partida = await this.partidaRepo.findByCodigo(codigo);
 
     if (!partida) {
-      return badRequest(
-        `No se encontró la partida con código ${codigoPartida}`,
-      );
+      return badRequest(`No se encontró la partida con código ${codigo}`);
     }
     const partidaActualizada = new PartidaModel(partida);
 
@@ -292,10 +264,7 @@ export class PartidaService {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { id, ...data } = partidaActualizada.getData();
 
-    const partidaGuardada = await this.prisma.partida.update({
-      where: { codigo: codigoPartida },
-      data: data,
-    });
+    const partidaGuardada = await this.partidaRepo.update(codigo, data);
 
     // si todo a salido bien regresamos la partida actualizada
     if (result.success) {
@@ -307,19 +276,15 @@ export class PartidaService {
 
   // Movimientos de juego
   async moverFichaAutomaticoEnPartida(
-    codigoPartida: string,
+    codigo: string,
     idJugador: number,
     cantidad: number,
   ): Promise<SocketResponse<Partida | null>> {
     // Buscar la partida en la base de datos
-    const partida = await this.prisma.partida.findUnique({
-      where: { codigo: codigoPartida },
-    });
+    const partida = await this.partidaRepo.findByCodigo(codigo);
 
     if (!partida) {
-      return badRequest(
-        `No se encontró la partida con código ${codigoPartida}`,
-      );
+      return badRequest(`No se encontró la partida con código ${codigo}`);
     }
     const partidaActualizada = new PartidaModel(partida);
 
@@ -328,10 +293,7 @@ export class PartidaService {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { id, ...data } = partidaActualizada.getData();
 
-    const partidaGuardada = await this.prisma.partida.update({
-      where: { codigo: codigoPartida },
-      data: data,
-    });
+    const partidaGuardada = await this.partidaRepo.update(codigo, data);
 
     // si todo a salido bien regresamos la partida actualizada
     if (result.success) {
@@ -343,16 +305,12 @@ export class PartidaService {
     }
   }
 
-  async iniciarPartida(codigoPartida: string) {
+  async iniciarPartida(codigo: string) {
     // Buscar la partida en la base de datos
-    const partida = await this.prisma.partida.findUnique({
-      where: { codigo: codigoPartida },
-    });
+    const partida = await this.partidaRepo.findByCodigo(codigo);
 
     if (!partida) {
-      return badRequest(
-        `No se encontró la partida con código ${codigoPartida}`,
-      );
+      return badRequest(`No se encontró la partida con código ${codigo}`);
     }
     const partidaActualizada = new PartidaModel(partida);
 
@@ -361,10 +319,7 @@ export class PartidaService {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { id, ...data } = partidaActualizada.getData();
 
-    const partidaGuardada = await this.prisma.partida.update({
-      where: { codigo: codigoPartida },
-      data: data,
-    });
+    const partidaGuardada = await this.partidaRepo.update(codigo, data);
 
     // si todo a salido bien regresamos la partida actualizada
     if (result.success) {
@@ -375,16 +330,12 @@ export class PartidaService {
   }
 
   async verificarGanador(
-    codigoPartida: string,
+    codigo: string,
   ): Promise<SocketResponse<Jugador | null>> {
-    const partida = await this.prisma.partida.findUnique({
-      where: { codigo: codigoPartida },
-    });
+    const partida = await this.partidaRepo.findByCodigo(codigo);
 
     if (!partida) {
-      return badRequest(
-        `No se encontró la partida con código ${codigoPartida}`,
-      );
+      return badRequest(`No se encontró la partida con código ${codigo}`);
     }
     const partidaActualizada = new PartidaModel(partida);
 
@@ -398,16 +349,11 @@ export class PartidaService {
   }
 
   async verificarPerdedores(
-    codigoPartida: string,
+    codigo: string,
   ): Promise<SocketResponse<Jugador[] | null>> {
-    const partida = await this.prisma.partida.findUnique({
-      where: { codigo: codigoPartida },
-    });
-
+    const partida = await this.partidaRepo.findByCodigo(codigo);
     if (!partida) {
-      return badRequest(
-        `No se encontró la partida con código ${codigoPartida}`,
-      );
+      return badRequest(`No se encontró la partida con código ${codigo}`);
     }
     const partidaActualizada = new PartidaModel(partida);
 
@@ -423,16 +369,12 @@ export class PartidaService {
   }
 
   async terminarPartida(
-    codigoPartida: string,
+    codigo: string,
   ): Promise<SocketResponse<Partida | null>> {
-    const partidaDeleted = await this.prisma.partida.delete({
-      where: { codigo: codigoPartida },
-    });
+    const partidaDeleted = await this.partidaRepo.delete(codigo);
 
     if (!partidaDeleted) {
-      return badRequest(
-        `No se encontró la partida con código ${codigoPartida}`,
-      );
+      return badRequest(`No se encontró la partida con código ${codigo}`);
     }
 
     return ok(partidaDeleted, 'partida eliminada');

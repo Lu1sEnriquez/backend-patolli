@@ -210,7 +210,10 @@ export class PartidaModel {
     this.siguienteTurno();
     const jugador = this.buscarJugadorPorId(idJugador);
     if (!jugador) {
-      return badRequest(`No se encontró al jugador con id ${idJugador}`);
+      return badIntent(
+        this.getData(),
+        `No se encontró al jugador con id ${idJugador}`,
+      );
     }
     jugador.pagarApuesta(this.montoApuesta);
 
@@ -234,7 +237,10 @@ export class PartidaModel {
     this.siguienteTurno();
     const jugador = this.buscarJugadorPorId(idJugador);
     if (!jugador) {
-      return badRequest(`No se encontró al jugador con id ${idJugador}`);
+      return badIntent(
+        this.getData(),
+        `No se encontró al jugador con id ${idJugador}`,
+      );
     }
 
     if (cantidad == 0) {
@@ -261,18 +267,23 @@ export class PartidaModel {
   ): SocketResponse<Partida | null> {
     const jugador = this.buscarJugadorPorId(idJugador);
     if (!jugador) {
-      return badRequest(`No se encontró al jugador con id ${idJugador}`);
+      return badIntent(
+        this.getData(),
+        `No se encontró al jugador con id ${idJugador}`,
+      );
     }
 
     const ficha = jugador.buscarFichaPorId(idFicha);
     if (!ficha) {
-      return badRequest(
+      return badIntent(
+        this.getData(),
         `No se encontró la ficha con id ${idFicha} en el jugador con id ${idJugador}`,
       );
     }
 
     if (ficha.eliminada) {
-      return badRequest(
+      return badIntent(
+        this.getData(),
         `La ficha con id ${idFicha} ha sido eliminada y no puede moverse`,
       );
     }
@@ -330,7 +341,7 @@ export class PartidaModel {
         nuevaCasilla.estaOtroJugador(ficha) &&
         nuevaCasilla.tipo !== 'CENTRAL'
       ) {
-        return badRequest(`casilla ocupada por otro jugador`);
+        return badIntent(this.getData(), `casilla ocupada por otro jugador`);
       }
 
       // Pagar apuesta si es una casilla de triángulo
@@ -365,7 +376,10 @@ export class PartidaModel {
       );
     }
 
-    return badRequest(`No se puede mover la ficha con id ${idFicha}`);
+    return badIntent(
+      this.getData(),
+      `No se puede mover la ficha con id ${idFicha}`,
+    );
   }
 
   // Método auxiliar para buscar jugador
